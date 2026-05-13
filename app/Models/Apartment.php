@@ -1,0 +1,21 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Apartment extends Model
+{
+    protected $fillable = [
+        'name',
+        'address',
+        'latitude',
+        'longitude',
+        'status',
+    ];
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class);
+    }
+}
