@@ -17,6 +17,9 @@ class OtpService
     public const RESEND_COOLDOWN_SECONDS = 60;
     public const MAX_SEND_PER_HOUR = 5;
 
+    /** Default OTP used until a real SMS provider is configured. */
+    public const DEFAULT_OTP = '1234';
+
     public function send(string $mobile): void
     {
         $record = Otp::firstOrNew(['mobile' => $mobile]);
@@ -44,10 +47,7 @@ class OtpService
             $record->send_window_started_at = now();
         }
 
-        $otp = (string) random_int(
-            10 ** (self::OTP_LENGTH - 1),
-            (10 ** self::OTP_LENGTH) - 1
-        );
+        $otp = $this->generateOtp();
 
         $record->fill([
             'otp' => $otp,
@@ -59,6 +59,7 @@ class OtpService
         $record->save();
 
         // Integrate SMS provider here (MSG91 / Twilio / Fast2SMS).
+        // Until then, OTP is the configured default (1234).
     }
 
     public function verify(string $mobile, string $otp): User
@@ -77,7 +78,7 @@ class OtpService
             throw ValidationException::withMessages(['otp' => 'OTP has expired.']);
         }
 
-        if (!hash_equals($record->otp, $otp)) {
+        if (!hash_equals((string) $record->otp, (string) $otp)) {
             $record->increment('attempts');
             throw ValidationException::withMessages(['otp' => 'Invalid OTP.']);
         }
@@ -97,6 +98,20 @@ class OtpService
                 'role' => 'customer',
                 'password' => Hash::make(Str::random(32)),
             ]
+        );
+    }
+
+    protected function generateOtp(): string
+    {
+        $fixed = config('services.otp.fixed_code', self::DEFAULT_OTP);
+
+        if (!empty($fixed)) {
+            return (string) $fixed;
+        }
+
+        return (string) random_int(
+            10 ** (self::OTP_LENGTH - 1),
+            (10 ** self::OTP_LENGTH) - 1
         );
     }
 }

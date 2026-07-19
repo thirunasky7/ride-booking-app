@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../config/api_config.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 import 'home_shell.dart';
@@ -35,7 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
     if (ok) {
       setState(() => _otpSent = true);
-      _toast('OTP sent successfully');
+      _toast('OTP sent. Use 1234');
     } else {
       _toast(context.read<AuthProvider>().error ?? 'Failed to send OTP');
     }
@@ -125,7 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       Text(
                         _otpSent
                             ? 'We sent a code to ${_mobileCtrl.text}'
-                            : 'We\'ll text you a one-time password',
+                            : 'We\'ll send a one-time password',
                         style: const TextStyle(color: AppTheme.muted),
                       ),
                       const SizedBox(height: 24),
@@ -146,13 +148,19 @@ class _LoginScreenState extends State<LoginScreen> {
                         TextField(
                           controller: _otpCtrl,
                           keyboardType: TextInputType.number,
-                          maxLength: 6,
+                          maxLength: 4,
                           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                           decoration: const InputDecoration(
-                            labelText: '6-digit OTP',
+                            labelText: '4-digit OTP',
+                            hintText: '1234',
                             prefixIcon: Icon(Icons.lock_outline_rounded),
                             counterText: '',
                           ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Default OTP: 1234',
+                          style: TextStyle(color: AppTheme.muted, fontSize: 13),
                         ),
                       ],
                       const SizedBox(height: 24),
@@ -176,6 +184,28 @@ class _LoginScreenState extends State<LoginScreen> {
                                   }),
                           child: const Text('Change number'),
                         ),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          TextButton(
+                            onPressed: () => launchUrl(
+                              Uri.parse(ApiConfig.privacyUrl),
+                              mode: LaunchMode.externalApplication,
+                            ),
+                            child: const Text('Privacy Policy', style: TextStyle(fontSize: 12)),
+                          ),
+                          const Text('·', style: TextStyle(color: AppTheme.muted)),
+                          TextButton(
+                            onPressed: () => launchUrl(
+                              Uri.parse(ApiConfig.termsUrl),
+                              mode: LaunchMode.externalApplication,
+                            ),
+                            child: const Text('Terms', style: TextStyle(fontSize: 12)),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),

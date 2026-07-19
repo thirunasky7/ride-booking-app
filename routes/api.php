@@ -41,6 +41,9 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::delete('/account', [AuthController::class, 'deleteAccount']);
+
     Route::post('/create-booking', [BookingApiController::class, 'createBooking']);
     Route::put('/modify-booking/{id}', [BookingApiController::class, 'modifyBooking']);
     Route::get('/booking-history', [BookingApiController::class, 'bookingHistory']);

@@ -21,6 +21,9 @@ Route::get('/services', [MarketingController::class, 'services'])->name('marketi
 Route::get('/pricing', [MarketingController::class, 'pricing'])->name('marketing.pricing');
 Route::get('/contact', [MarketingController::class, 'contact'])->name('marketing.contact');
 Route::get('/driver-register', [MarketingController::class, 'driverRegister'])->name('marketing.driver-register');
+Route::get('/privacy-policy', [MarketingController::class, 'privacy'])->name('marketing.privacy');
+Route::get('/terms', [MarketingController::class, 'terms'])->name('marketing.terms');
+Route::get('/account-deletion', [MarketingController::class, 'accountDeletion'])->name('marketing.account-deletion');
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');

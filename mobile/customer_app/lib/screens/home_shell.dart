@@ -7,7 +7,7 @@ import '../services/customer_api.dart';
 import '../theme/app_theme.dart';
 import 'book_ride_screen.dart';
 import 'bookings_screen.dart';
-import 'login_screen.dart';
+import 'profile_screen.dart';
 import 'subscriptions_screen.dart';
 
 class HomeShell extends StatefulWidget {
@@ -30,22 +30,29 @@ class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      _HomeTab(api: _api, onBook: () => setState(() => _index = 1)),
+      _HomeTab(
+        api: _api,
+        onBook: () => setState(() => _index = 1),
+        onProfile: () => setState(() => _index = 4),
+        onPass: () => setState(() => _index = 3),
+      ),
       BookRideScreen(api: _api),
       BookingsScreen(api: _api),
       SubscriptionsScreen(api: _api),
+      const ProfileScreen(),
     ];
 
     return Scaffold(
       body: pages[_index],
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
+        selectedIndex: _index > 3 ? 4 : _index,
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home_rounded), label: 'Home'),
           NavigationDestination(icon: Icon(Icons.local_taxi_outlined), selectedIcon: Icon(Icons.local_taxi), label: 'Book'),
           NavigationDestination(icon: Icon(Icons.receipt_long_outlined), selectedIcon: Icon(Icons.receipt_long), label: 'Trips'),
           NavigationDestination(icon: Icon(Icons.workspace_premium_outlined), selectedIcon: Icon(Icons.workspace_premium), label: 'Pass'),
+          NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
         ],
       ),
     );
@@ -53,10 +60,17 @@ class _HomeShellState extends State<HomeShell> {
 }
 
 class _HomeTab extends StatefulWidget {
-  const _HomeTab({required this.api, required this.onBook});
+  const _HomeTab({
+    required this.api,
+    required this.onBook,
+    required this.onProfile,
+    required this.onPass,
+  });
 
   final CustomerApi api;
   final VoidCallback onBook;
+  final VoidCallback onProfile;
+  final VoidCallback onPass;
 
   @override
   State<_HomeTab> createState() => _HomeTabState();
@@ -84,15 +98,6 @@ class _HomeTabState extends State<_HomeTab> {
       if (!mounted) return;
       setState(() => loading = false);
     }
-  }
-
-  Future<void> _logout() async {
-    await context.read<AuthProvider>().logout();
-    if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-      (_) => false,
-    );
   }
 
   @override
@@ -135,8 +140,8 @@ class _HomeTabState extends State<_HomeTab> {
                         ),
                       ),
                       IconButton(
-                        onPressed: _logout,
-                        icon: const Icon(Icons.logout_rounded, color: Colors.white),
+                        onPressed: widget.onProfile,
+                        icon: const Icon(Icons.person_outline, color: Colors.white),
                       ),
                     ],
                   ),
@@ -231,7 +236,7 @@ class _HomeTabState extends State<_HomeTab> {
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         ),
-                        onPressed: () {},
+                        onPressed: widget.onPass,
                         child: const Text('Explore'),
                       ),
                     ],

@@ -35,4 +35,9 @@ return [
         'maps_api_key' => env('GOOGLE_MAPS_API_KEY'),
     ],
 
+    'otp' => [
+        // Set OTP_FIXED_CODE= to empty in .env to use random OTPs with SMS.
+        'fixed_code' => env('OTP_FIXED_CODE', '1234'),
+    ],
+
 ];

@@ -78,6 +78,21 @@ POST /api/bookings/{id}/payment-status
 { "payment_status": "paid", "payment_method": "upi" }
 ```
 
+### Default OTP
+
+OTP is fixed to **1234** by default (`OTP_FIXED_CODE=1234` in `.env`).  
+To use random OTPs later, set `OTP_FIXED_CODE=` empty and integrate SMS.
+
+### Play Store policy pages
+
+Use these URLs in Play Console:
+
+- Privacy: `https://book.zennexs.com/privacy-policy`
+- Terms: `https://book.zennexs.com/terms`
+- Account deletion: `https://book.zennexs.com/account-deletion`
+
+In-app: Profile → Privacy / Terms / Delete account.
+
 Run migration after pull:
 
 ```bash

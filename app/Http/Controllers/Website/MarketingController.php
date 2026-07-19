@@ -40,4 +40,19 @@ class MarketingController extends Controller
     {
         return view('website.marketing.driver-register');
     }
+
+    public function privacy()
+    {
+        return view('website.marketing.privacy');
+    }
+
+    public function terms()
+    {
+        return view('website.marketing.terms');
+    }
+
+    public function accountDeletion()
+    {
+        return view('website.marketing.account-deletion');
+    }
 }

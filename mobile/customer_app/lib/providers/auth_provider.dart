@@ -24,7 +24,6 @@ class AuthProvider extends ChangeNotifier {
     }
     try {
       final res = await _api.get('/user', auth: true);
-      // /user returns the user model at top-level data or as the data itself
       final data = res['data'];
       if (data is Map<String, dynamic>) {
         user = UserModel.fromJson(data);
@@ -78,8 +77,32 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    try {
+      await _api.post('/logout', auth: true);
+    } catch (_) {
+      // Still clear local session if network fails.
+    }
     await _api.clearToken();
     user = null;
     notifyListeners();
+  }
+
+  Future<bool> deleteAccount() async {
+    loading = true;
+    error = null;
+    notifyListeners();
+    try {
+      await _api.delete('/account', auth: true);
+      await _api.clearToken();
+      user = null;
+      loading = false;
+      notifyListeners();
+      return true;
+    } on ApiException catch (e) {
+      error = e.message;
+      loading = false;
+      notifyListeners();
+      return false;
+    }
   }
 }
