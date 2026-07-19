@@ -42,7 +42,8 @@ class _Root extends StatelessWidget {
     final auth = context.watch<AuthProvider>();
     if (!auth.initialized) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        backgroundColor: AppTheme.black,
+        body: Center(child: CircularProgressIndicator(color: AppTheme.yellow)),
       );
     }
     return auth.isLoggedIn ? const HomeShell() : const LoginScreen();

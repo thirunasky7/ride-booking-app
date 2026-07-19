@@ -1,3 +1,21 @@
+double? parseDouble(dynamic value) {
+  if (value == null) return null;
+  if (value is num) return value.toDouble();
+  return double.tryParse(value.toString());
+}
+
+int? parseInt(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return int.tryParse(value.toString());
+}
+
+String parseString(dynamic value) {
+  if (value == null) return '';
+  return value.toString();
+}
+
 class UserModel {
   UserModel({
     required this.id,
@@ -8,10 +26,10 @@ class UserModel {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['id'] as int,
-      name: (json['name'] as String?) ?? '',
-      mobile: (json['mobile'] as String?) ?? '',
-      email: json['email'] as String?,
+      id: parseInt(json['id']) ?? 0,
+      name: parseString(json['name']),
+      mobile: parseString(json['mobile']),
+      email: json['email']?.toString(),
     );
   }
 
@@ -26,9 +44,9 @@ class ApartmentModel {
 
   factory ApartmentModel.fromJson(Map<String, dynamic> json) {
     return ApartmentModel(
-      id: json['id'] as int,
-      name: (json['name'] as String?) ?? '',
-      address: json['address'] as String?,
+      id: parseInt(json['id']) ?? 0,
+      name: parseString(json['name']),
+      address: json['address']?.toString(),
     );
   }
 
@@ -42,9 +60,9 @@ class BusStandModel {
 
   factory BusStandModel.fromJson(Map<String, dynamic> json) {
     return BusStandModel(
-      id: json['id'] as int,
-      name: (json['name'] as String?) ?? '',
-      address: json['address'] as String?,
+      id: parseInt(json['id']) ?? 0,
+      name: parseString(json['name']),
+      address: json['address']?.toString(),
     );
   }
 
@@ -63,10 +81,10 @@ class SlotModel {
 
   factory SlotModel.fromJson(Map<String, dynamic> json) {
     return SlotModel(
-      timeSlotId: json['time_slot_id'] as int,
-      slotTime: (json['slot_time'] as String?) ?? '',
+      timeSlotId: parseInt(json['time_slot_id']) ?? 0,
+      slotTime: parseString(json['slot_time']),
       isAvailable: json['is_available'] == true,
-      availableVehicles: (json['available_vehicles'] as num?)?.toInt() ?? 0,
+      availableVehicles: parseInt(json['available_vehicles']) ?? 0,
     );
   }
 
@@ -84,6 +102,9 @@ class BookingModel {
     required this.tripType,
     required this.status,
     required this.bookingType,
+    this.paymentStatus = 'unpaid',
+    this.paymentMethod,
+    this.paidAt,
     this.price,
     this.pickupAddress,
     this.dropAddress,
@@ -95,17 +116,22 @@ class BookingModel {
     final apartment = json['apartment'] as Map<String, dynamic>?;
     final busStand = json['bus_stand'] as Map<String, dynamic>?;
     return BookingModel(
-      id: json['id'] as int,
-      bookingDate: (json['booking_date'] as String?) ?? '',
-      slotTime: (json['slot_time'] as String?) ?? '',
-      tripType: (json['trip_type'] as String?) ?? '',
-      status: (json['status'] as String?) ?? '',
-      bookingType: (json['booking_type'] as String?) ?? '',
-      price: (json['price'] as num?)?.toDouble(),
-      pickupAddress: json['pickup_address'] as String?,
-      dropAddress: json['drop_address'] as String?,
-      apartmentName: apartment?['name'] as String?,
-      busStandName: busStand?['name'] as String?,
+      id: parseInt(json['id']) ?? 0,
+      bookingDate: parseString(json['booking_date']),
+      slotTime: parseString(json['slot_time']),
+      tripType: parseString(json['trip_type']),
+      status: parseString(json['status']),
+      bookingType: parseString(json['booking_type']),
+      paymentStatus: parseString(json['payment_status']).isEmpty
+          ? 'unpaid'
+          : parseString(json['payment_status']),
+      paymentMethod: json['payment_method']?.toString(),
+      paidAt: json['paid_at']?.toString(),
+      price: parseDouble(json['price']),
+      pickupAddress: json['pickup_address']?.toString(),
+      dropAddress: json['drop_address']?.toString(),
+      apartmentName: apartment?['name']?.toString(),
+      busStandName: busStand?['name']?.toString(),
     );
   }
 
@@ -115,11 +141,16 @@ class BookingModel {
   final String tripType;
   final String status;
   final String bookingType;
+  final String paymentStatus;
+  final String? paymentMethod;
+  final String? paidAt;
   final double? price;
   final String? pickupAddress;
   final String? dropAddress;
   final String? apartmentName;
   final String? busStandName;
+
+  bool get isPaid => paymentStatus == 'paid';
 
   String get pickupLabel =>
       (pickupAddress != null && pickupAddress!.isNotEmpty)
@@ -143,11 +174,11 @@ class SubscriptionPlan {
 
   factory SubscriptionPlan.fromJson(Map<String, dynamic> json) {
     return SubscriptionPlan(
-      id: json['id'] as int,
-      name: (json['name'] as String?) ?? '',
-      price: (json['price'] as num?)?.toDouble() ?? 0,
-      ridesLimit: (json['ride_limit'] as num?)?.toInt() ?? 0,
-      durationDays: (json['validity_days'] as num?)?.toInt(),
+      id: parseInt(json['id']) ?? 0,
+      name: parseString(json['name']),
+      price: parseDouble(json['price']) ?? 0,
+      ridesLimit: parseInt(json['ride_limit']) ?? 0,
+      durationDays: parseInt(json['validity_days']),
     );
   }
 

@@ -17,6 +17,9 @@ class Booking extends Model
         'trip_type',
         'booking_type',
         'status',
+        'payment_status',
+        'payment_method',
+        'paid_at',
         'price',
         'commission_amount',
         'driver_amount',
@@ -37,6 +40,7 @@ class Booking extends Model
         'pickup_lng' => 'decimal:7',
         'drop_lat' => 'decimal:7',
         'drop_lng' => 'decimal:7',
+        'paid_at' => 'datetime',
     ];
 
     public function customer()

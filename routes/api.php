@@ -47,6 +47,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/upcoming-bookings', [BookingApiController::class, 'upcomingBookings']);
     Route::get('/completed-bookings', [BookingApiController::class, 'completedBookings']);
     Route::post('/cancel-booking/{id}', [BookingApiController::class, 'cancelBooking']);
+    Route::post('/bookings/{id}/payment-status', [BookingApiController::class, 'updatePaymentStatus']);
 
     Route::get('/pre-bookings', [PreBookingApiController::class, 'index']);
     Route::post('/pre-bookings', [PreBookingApiController::class, 'store']);

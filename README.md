@@ -160,6 +160,15 @@ Two separate Flutter apps live under `mobile/`:
 
 See [mobile/README.md](mobile/README.md) for setup, API URL config, and run commands.
 
+### Customer payment API
+
+```
+POST /api/bookings/{id}/payment-status
+Authorization: Bearer <token>
+
+{ "payment_status": "paid", "payment_method": "upi" }  // or "cash"
+```
+
 ## License
 
 MIT

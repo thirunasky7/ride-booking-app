@@ -1,3 +1,21 @@
+double? parseDouble(dynamic value) {
+  if (value == null) return null;
+  if (value is num) return value.toDouble();
+  return double.tryParse(value.toString());
+}
+
+int? parseInt(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return int.tryParse(value.toString());
+}
+
+String parseString(dynamic value) {
+  if (value == null) return '';
+  return value.toString();
+}
+
 class DriverModel {
   DriverModel({
     required this.id,
@@ -8,9 +26,9 @@ class DriverModel {
 
   factory DriverModel.fromJson(Map<String, dynamic> json) {
     return DriverModel(
-      id: json['id'] as int,
-      name: (json['name'] as String?) ?? '',
-      mobile: (json['mobile'] as String?) ?? '',
+      id: parseInt(json['id']) ?? 0,
+      name: parseString(json['name']),
+      mobile: parseString(json['mobile']),
       isOnline: json['is_online'] == true || json['is_online'] == 1,
     );
   }
@@ -51,18 +69,18 @@ class TripModel {
     final apartment = json['apartment'] as Map<String, dynamic>?;
     final busStand = json['bus_stand'] as Map<String, dynamic>?;
     return TripModel(
-      id: json['id'] as int,
-      bookingDate: (json['booking_date'] as String?) ?? '',
-      slotTime: (json['slot_time'] as String?) ?? '',
-      tripType: (json['trip_type'] as String?) ?? '',
-      status: (json['status'] as String?) ?? '',
-      price: (json['price'] as num?)?.toDouble(),
-      pickupAddress: json['pickup_address'] as String?,
-      dropAddress: json['drop_address'] as String?,
-      customerName: customer?['name'] as String?,
-      customerMobile: customer?['mobile'] as String?,
-      apartmentName: apartment?['name'] as String?,
-      busStandName: busStand?['name'] as String?,
+      id: parseInt(json['id']) ?? 0,
+      bookingDate: parseString(json['booking_date']),
+      slotTime: parseString(json['slot_time']),
+      tripType: parseString(json['trip_type']),
+      status: parseString(json['status']),
+      price: parseDouble(json['price']),
+      pickupAddress: json['pickup_address']?.toString(),
+      dropAddress: json['drop_address']?.toString(),
+      customerName: customer?['name']?.toString(),
+      customerMobile: customer?['mobile']?.toString(),
+      apartmentName: apartment?['name']?.toString(),
+      busStandName: busStand?['name']?.toString(),
     );
   }
 
@@ -101,11 +119,11 @@ class EarningModel {
 
   factory EarningModel.fromJson(Map<String, dynamic> json) {
     return EarningModel(
-      id: json['id'] as int,
-      driverAmount: (json['driver_amount'] as num?)?.toDouble() ?? 0,
-      commissionAmount: (json['commission_amount'] as num?)?.toDouble(),
-      createdAt: json['created_at'] as String?,
-      bookingId: json['booking_id'] as int?,
+      id: parseInt(json['id']) ?? 0,
+      driverAmount: parseDouble(json['driver_amount']) ?? 0,
+      commissionAmount: parseDouble(json['commission_amount']),
+      createdAt: json['created_at']?.toString(),
+      bookingId: parseInt(json['booking_id']),
     );
   }
 

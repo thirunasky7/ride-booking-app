@@ -66,6 +66,7 @@ class BookingService
                 'trip_type' => $data['trip_type'],
                 'booking_type' => $bookingType,
                 'status' => $bookingType === self::TYPE_INSTANT ? 'confirmed' : 'pending',
+                'payment_status' => 'unpaid',
                 'price' => $pricing['price'],
                 'commission_amount' => $pricing['commission_amount'],
                 'driver_amount' => $pricing['driver_amount'],
@@ -173,6 +174,41 @@ class BookingService
         $booking->update(['status' => 'cancelled']);
 
         return $booking;
+    }
+
+    public function updatePaymentStatus(Booking $booking, User $user, string $paymentStatus, ?string $paymentMethod = null): Booking
+    {
+        if ($booking->user_id !== $user->id) {
+            throw new RuntimeException('Unauthorized booking access.');
+        }
+
+        if ($booking->status === 'cancelled') {
+            throw new RuntimeException('Cannot update payment for a cancelled booking.');
+        }
+
+        if (!in_array($paymentStatus, ['unpaid', 'paid'], true)) {
+            throw new RuntimeException('Invalid payment status.');
+        }
+
+        if ($paymentStatus === 'paid') {
+            if (!in_array($paymentMethod, ['cash', 'upi'], true)) {
+                throw new RuntimeException('Select a payment method: cash or upi.');
+            }
+
+            $booking->update([
+                'payment_status' => 'paid',
+                'payment_method' => $paymentMethod,
+                'paid_at' => now(),
+            ]);
+        } else {
+            $booking->update([
+                'payment_status' => 'unpaid',
+                'payment_method' => null,
+                'paid_at' => null,
+            ]);
+        }
+
+        return $booking->fresh(['vehicle', 'apartment', 'busStand']);
     }
 
     public function modify(Booking $booking, User $user, array $data): Booking

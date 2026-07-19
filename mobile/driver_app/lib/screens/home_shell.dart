@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/models.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_client.dart';
 import '../services/driver_api.dart';
@@ -93,9 +94,9 @@ class _DashboardTabState extends State<_DashboardTab> {
       final data = await widget.api.dashboard();
       if (!mounted) return;
       setState(() {
-        todayTrips = (data['today_trips'] as num?)?.toInt() ?? 0;
-        completedTrips = (data['completed_trips'] as num?)?.toInt() ?? 0;
-        totalEarnings = (data['total_earnings'] as num?)?.toDouble() ?? 0;
+        todayTrips = parseInt(data['today_trips']) ?? 0;
+        completedTrips = parseInt(data['completed_trips']) ?? 0;
+        totalEarnings = parseDouble(data['total_earnings']) ?? 0;
         loading = false;
       });
     } on ApiException catch (e) {

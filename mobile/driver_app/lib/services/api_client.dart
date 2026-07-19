@@ -85,10 +85,26 @@ class ApiClient {
     final ok = json['status'] == true;
     if (!ok || response.statusCode >= 400) {
       throw ApiException(
-        (json['message'] as String?) ?? 'Request failed.',
+        _errorMessage(json),
         statusCode: response.statusCode,
       );
     }
     return json;
+  }
+
+  String _errorMessage(Map<String, dynamic> json) {
+    final errors = json['errors'];
+    if (errors is Map && errors.isNotEmpty) {
+      final parts = <String>[];
+      errors.forEach((_, value) {
+        if (value is List && value.isNotEmpty) {
+          parts.add(value.first.toString());
+        } else if (value != null) {
+          parts.add(value.toString());
+        }
+      });
+      if (parts.isNotEmpty) return parts.join('\n');
+    }
+    return (json['message'] as String?) ?? 'Request failed.';
   }
 }

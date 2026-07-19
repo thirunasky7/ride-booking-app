@@ -74,6 +74,28 @@ class BookingApiController extends Controller
         }
     }
 
+    public function updatePaymentStatus(Request $request, $id)
+    {
+        $request->validate([
+            'payment_status' => 'required|in:unpaid,paid',
+            'payment_method' => 'required_if:payment_status,paid|nullable|in:cash,upi',
+        ]);
+
+        try {
+            $booking = Booking::where('user_id', auth()->id())->findOrFail($id);
+            $updated = $this->bookingService->updatePaymentStatus(
+                $booking,
+                auth()->user(),
+                $request->payment_status,
+                $request->payment_method
+            );
+
+            return $this->success(['booking' => $updated], 'Payment status updated.');
+        } catch (RuntimeException $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+    }
+
     public function modifyBooking(BookingRequest $request, $id)
     {
         try {

@@ -69,15 +69,21 @@ flutter run
 - Mobile: `9876543210`
 - Password: `driver123`
 
-## Features
+### Customer payment
 
-### Customer
-- OTP login
-- Home dashboard
-- Book ride (apartment / bus stand / Others + custom addresses)
-- Live fare preview
-- Upcoming + history bookings with cancel
-- Subscription plans + purchase
+Customers can mark a booking as paid with method **UPI** or **Cash**:
+
+```
+POST /api/bookings/{id}/payment-status
+{ "payment_status": "paid", "payment_method": "upi" }
+```
+
+Run migration after pull:
+
+```bash
+php artisan migrate
+```
+
 
 ### Driver
 - Mobile/password login

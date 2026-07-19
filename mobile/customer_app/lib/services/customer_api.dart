@@ -60,6 +60,27 @@ class CustomerApi {
     await _api.post('/cancel-booking/$id', auth: true);
   }
 
+  Future<BookingModel> updatePaymentStatus({
+    required int bookingId,
+    required String paymentStatus,
+    String? paymentMethod,
+  }) async {
+    final body = <String, dynamic>{
+      'payment_status': paymentStatus,
+    };
+    if (paymentMethod != null) {
+      body['payment_method'] = paymentMethod;
+    }
+    final res = await _api.post(
+      '/bookings/$bookingId/payment-status',
+      body: body,
+      auth: true,
+    );
+    return BookingModel.fromJson(
+      (res['data'] as Map)['booking'] as Map<String, dynamic>,
+    );
+  }
+
   Future<List<SubscriptionPlan>> plans() async {
     final res = await _api.get('/subscription-plans', auth: true);
     final list = (res['data'] as Map)['plans'] as List? ?? [];
