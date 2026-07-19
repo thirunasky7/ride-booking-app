@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\RoutePrice;
 use App\Models\Apartment;
 use App\Models\BusStand;
+use App\Services\PricingService;
 
 class RoutePriceController extends Controller
 {
@@ -52,6 +53,11 @@ class RoutePriceController extends Controller
 
         RoutePrice::create($request->all());
 
+        app(PricingService::class)->clearRoutePriceCache(
+            (int) $request->apartment_id,
+            (int) $request->bus_stand_id
+        );
+
         return redirect()
             ->route('route-prices.index')
             ->with(
@@ -82,6 +88,11 @@ class RoutePriceController extends Controller
     ) {
 
         $route_price->update($request->all());
+
+        app(PricingService::class)->clearRoutePriceCache(
+            (int) $route_price->apartment_id,
+            (int) $route_price->bus_stand_id
+        );
 
         return redirect()
             ->route('route-prices.index')

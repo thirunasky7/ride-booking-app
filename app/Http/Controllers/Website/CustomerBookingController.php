@@ -3,208 +3,149 @@
 namespace App\Http\Controllers\Website;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Http\Requests\BookingRequest;
 use App\Models\Apartment;
-use App\Models\BusStand;
 use App\Models\Booking;
-use App\Models\Vehicle;
+use App\Models\BusStand;
+use App\Models\Subscription;
 use App\Models\TimeSlot;
-use App\Models\RoutePrice;
+use App\Services\BookingService;
+use App\Services\PricingService;
+use App\Services\SubscriptionService;
+use App\Traits\ApiResponse;
+use Illuminate\Http\Request;
+use RuntimeException;
 
 class CustomerBookingController extends Controller
 {
+    use ApiResponse;
+
+    public function __construct(
+        protected BookingService $bookingService,
+        protected SubscriptionService $subscriptionService,
+        protected PricingService $pricingService,
+    ) {}
+
     public function dashboard()
     {
-        return view(
-            'website.customer.dashboard'
-        );
+        $userId = auth()->id();
+
+        $upcomingCount = Booking::where('user_id', $userId)
+            ->whereIn('status', BookingService::ACTIVE_STATUSES)
+            ->where('booking_date', '>=', now()->toDateString())
+            ->count();
+
+        $completedCount = Booking::where('user_id', $userId)->where('status', 'completed')->count();
+        $totalCount = Booking::where('user_id', $userId)->count();
+
+        $recentBooking = Booking::with(['apartment', 'busStand'])
+            ->where('user_id', $userId)->latest()->first();
+
+        $activeSubscription = $this->subscriptionService->getActiveSubscription(auth()->user());
+
+        return view('website.customer.dashboard', compact(
+            'upcomingCount', 'completedCount', 'totalCount', 'recentBooking', 'activeSubscription'
+        ));
     }
 
     public function create()
     {
-        $apartments = Apartment::where(
-            'status',
-            1
-        )->get();
+        $slots = TimeSlot::where('status', 1)->get();
 
-        $busStands = BusStand::where(
-            'status',
-            1
-        )->get();
-
-        $slots = TimeSlot::where(
-            'status',
-            1
-        )->get();
-
-        return view(
-            'website.customer.book-ride',
-            compact(
-                'apartments',
-                'busStands',
-                'slots'
-            )
-        );
+        return view('website.customer.book-ride', [
+            'slots' => $slots,
+            'apartments' => Apartment::where('status', 1)->orderBy('name')->get(),
+            'busStands' => BusStand::where('status', 1)->orderBy('name')->get(),
+        ]);
     }
 
-    public function store(Request $request)
+    public function store(BookingRequest $request)
     {
-        $request->validate([
+        try {
+            $this->bookingService->create(auth()->user(), $request->validated());
 
-            'apartment_id' => 'required',
-
-            'bus_stand_id' => 'required',
-
-            'booking_date' => 'required',
-
-            'slot_time' => 'required',
-
-            'trip_type' => 'required',
-
-        ]);
-
-        /*
-        |--------------------------------------------------------------------------
-        | Find Vehicle
-        |--------------------------------------------------------------------------
-        */
-
-        $vehicles = Vehicle::where(
-            'status',
-            1
-        )->get();
-
-        $assignedVehicle = null;
-
-        foreach ($vehicles as $vehicle) {
-
-            $exists = Booking::where(
-                'vehicle_id',
-                $vehicle->id
-            )
-            ->where(
-                'booking_date',
-                $request->booking_date
-            )
-            ->where(
-                'slot_time',
-                $request->slot_time
-            )
-            ->whereIn('status', [
-                'pending',
-                'confirmed',
-                'started'
-            ])
-            ->exists();
-
-            if (!$exists) {
-
-                $assignedVehicle = $vehicle;
-
-                break;
-            }
+            return redirect()->route('customer.myBookings')
+                ->with('success', 'Booking created successfully.');
+        } catch (RuntimeException $e) {
+            return back()->withErrors(['booking' => $e->getMessage()])->withInput();
         }
+    }
 
-        if (!$assignedVehicle) {
+    /** @deprecated Use create() — same unified booking flow */
+    public function preBookForm()
+    {
+        return redirect()->route('customer.bookRide');
+    }
 
-            return back()->withErrors([
+    /** @deprecated Use store() */
+    public function storePreBook(BookingRequest $request)
+    {
+        return $this->store($request);
+    }
 
-                'slot_time' =>
-                'No Vehicle Available'
+    /** Scheduled bookings from unified table */
+    public function preBookings()
+    {
+        $bookings = Booking::with(['apartment', 'busStand'])
+            ->where('user_id', auth()->id())
+            ->where('booking_type', BookingService::TYPE_SCHEDULED)
+            ->latest()
+            ->paginate(20);
 
-            ]);
+        return view('website.customer.pre-bookings', compact('bookings'));
+    }
+
+    public function calculatePrice(Request $request)
+    {
+        return app(\App\Http\Controllers\Api\PricingApiController::class)->calculatePrice($request);
+    }
+
+    public function availableSlots(Request $request)
+    {
+        return app(\App\Http\Controllers\Api\SlotApiController::class)->availableSlots($request);
+    }
+
+    public function subscriptions()
+    {
+        $plans = Subscription::where('status', true)->orderBy('price')->get();
+        $activeSubscription = $this->subscriptionService->getActiveSubscription(auth()->user());
+
+        return view('website.customer.subscriptions', compact('plans', 'activeSubscription'));
+    }
+
+    public function purchaseSubscription(Request $request)
+    {
+        $request->validate(['subscription_id' => 'required|exists:subscriptions,id']);
+
+        try {
+            $plan = Subscription::findOrFail($request->subscription_id);
+            $this->subscriptionService->purchase(auth()->user(), $plan);
+
+            return back()->with('success', 'Subscription activated successfully.');
+        } catch (RuntimeException $e) {
+            return back()->withErrors(['subscription' => $e->getMessage()]);
         }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Price
-        |--------------------------------------------------------------------------
-        */
-
-        $routePrice = RoutePrice::where(
-            'apartment_id',
-            $request->apartment_id
-        )
-        ->where(
-            'bus_stand_id',
-            $request->bus_stand_id
-        )
-        ->first();
-      
-
-        $price = $routePrice?->base_price ?? 0;
-        /*
-        |--------------------------------------------------------------------------
-        | Booking
-        |--------------------------------------------------------------------------
-        */
-
-        Booking::create([
-
-            'user_id' => auth()->id(),
-
-            'vehicle_id' => $assignedVehicle->id,
-
-            'apartment_id' => $request->apartment_id,
-
-            'bus_stand_id' => $request->bus_stand_id,
-
-            'booking_date' => $request->booking_date,
-
-            'slot_time' => $request->slot_time,
-
-            'trip_type' => $request->trip_type,
-
-            'price' => $price,
-
-            'status' => 'confirmed',
-
-        ]);
-
-        return redirect()
-            ->route('customer.myBookings')
-            ->with(
-                'success',
-                'Booking Created Successfully'
-            );
     }
 
     public function myBookings()
     {
-        $bookings = Booking::with([
-            'vehicle',
-            'apartment',
-            'busStand'
-        ])
-        ->where(
-            'user_id',
-            auth()->id()
-        )
-        ->latest()
-        ->paginate(20);
+        $bookings = Booking::with(['vehicle', 'apartment', 'busStand'])
+            ->where('user_id', auth()->id())
+            ->latest()
+            ->paginate(20);
 
-        return view(
-            'website.customer.my-bookings',
-            compact('bookings')
-        );
+        return view('website.customer.my-bookings', compact('bookings'));
     }
 
     public function cancelBooking($id)
     {
-        $booking = Booking::where(
-            'user_id',
-            auth()->id()
-        )->findOrFail($id);
+        try {
+            $booking = Booking::where('user_id', auth()->id())->findOrFail($id);
+            $this->bookingService->cancel($booking, auth()->user());
 
-        $booking->update([
-
-            'status' => 'cancelled'
-
-        ]);
-
-        return back()->with(
-            'success',
-            'Booking Cancelled'
-        );
+            return back()->with('success', 'Booking cancelled.');
+        } catch (RuntimeException $e) {
+            return back()->withErrors(['booking' => $e->getMessage()]);
+        }
     }
 }

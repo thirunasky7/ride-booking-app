@@ -1,0 +1,263 @@
+{
+  "info": {
+    "name": "Apartment Shuttle API",
+    "description": "Full API collection for Apartment Shuttle SaaS platform",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000/api" },
+    { "key": "customer_token", "value": "" },
+    { "key": "driver_token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Send OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"mobile\": \"9999888877\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/send-otp"
+          }
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"mobile\": \"9999888877\",\n  \"otp\": \"1234\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/verify-otp"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Booking",
+      "item": [
+        {
+          "name": "Available Slots",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/available-slots?booking_date=2026-07-10"
+          }
+        },
+        {
+          "name": "Create Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{customer_token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"apartment_id\": 1,\n  \"bus_stand_id\": 1,\n  \"booking_date\": \"2026-07-10\",\n  \"slot_time\": \"07:30:00\",\n  \"trip_type\": \"apartment_to_busstand\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/create-booking"
+          }
+        },
+        {
+          "name": "Booking History",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{customer_token}}" }
+            ],
+            "url": "{{base_url}}/booking-history"
+          }
+        },
+        {
+          "name": "Upcoming Bookings",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{customer_token}}" }
+            ],
+            "url": "{{base_url}}/upcoming-bookings"
+          }
+        },
+        {
+          "name": "Cancel Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{customer_token}}" }
+            ],
+            "url": "{{base_url}}/cancel-booking/1"
+          }
+        },
+        {
+          "name": "Modify Booking",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{customer_token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"apartment_id\": 1,\n  \"bus_stand_id\": 1,\n  \"booking_date\": \"2026-07-11\",\n  \"slot_time\": \"08:30:00\",\n  \"trip_type\": \"apartment_to_busstand\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/modify-booking/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pre-Booking",
+      "item": [
+        {
+          "name": "List Pre-Bookings",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{customer_token}}" }
+            ],
+            "url": "{{base_url}}/pre-bookings"
+          }
+        },
+        {
+          "name": "Create Pre-Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{customer_token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"apartment_id\": 1,\n  \"bus_stand_id\": 1,\n  \"booking_date\": \"2026-07-15\",\n  \"slot_time\": \"07:30:00\",\n  \"trip_type\": \"apartment_to_busstand\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/pre-bookings"
+          }
+        },
+        {
+          "name": "Confirm Pre-Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{customer_token}}" }
+            ],
+            "url": "{{base_url}}/pre-bookings/1/confirm"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Subscription",
+      "item": [
+        {
+          "name": "List Plans",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": "{{base_url}}/subscription-plans"
+          }
+        },
+        {
+          "name": "My Subscription",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{customer_token}}" }
+            ],
+            "url": "{{base_url}}/my-subscription"
+          }
+        },
+        {
+          "name": "Purchase Subscription",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{customer_token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"subscription_id\": 1\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/purchase-subscription"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Driver",
+      "item": [
+        {
+          "name": "Driver Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"mobile\": \"9876543210\",\n  \"password\": \"driver123\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/driver/login"
+          }
+        },
+        {
+          "name": "Driver Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{driver_token}}" }
+            ],
+            "url": "{{base_url}}/driver/dashboard"
+          }
+        },
+        {
+          "name": "Today Trips",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{driver_token}}" }
+            ],
+            "url": "{{base_url}}/driver/today-trips"
+          }
+        },
+        {
+          "name": "Driver Earnings",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{driver_token}}" }
+            ],
+            "url": "{{base_url}}/driver/earnings"
+          }
+        },
+        {
+          "name": "Start Trip",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{driver_token}}" }
+            ],
+            "url": "{{base_url}}/driver/start-trip/1"
+          }
+        },
+        {
+          "name": "Complete Trip",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{driver_token}}" }
+            ],
+            "url": "{{base_url}}/driver/complete-trip/1"
+          }
+        },
+        {
+          "name": "Toggle Online",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{driver_token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"is_online\": true\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/driver/toggle-online"
+          }
+        }
+      ]
+    }
+  ]
+}

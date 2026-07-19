@@ -1,100 +1,38 @@
 @extends('admin.layout')
 
+@section('title', 'Route Pricing')
+
 @section('content')
 
-<div class="d-flex justify-content-between mb-3">
+@include('admin.partials.page-header', [
+    'title' => 'Route Pricing',
+    'subtitle' => 'Manage apartment to bus stand fares',
+    'action' => route('route-prices.create'),
+    'actionLabel' => 'Add Price',
+])
 
-    <h3>Route Pricing</h3>
-
-    <a href="{{ route('route-prices.create') }}"
-       class="btn btn-primary">
-
-        Add Price
-
-    </a>
-
-</div>
-
-<table class="table table-bordered">
-
-    <thead>
-
-        <tr>
-
-            <th>Apartment</th>
-
-            <th>Bus Stand</th>
-
-            <th>Base Price</th>
-
-            <th>Peak Price</th>
-
-            <th>Holiday Price</th>
-
-            <th>Action</th>
-
-        </tr>
-
-    </thead>
-
-    <tbody>
-
-        @foreach($prices as $price)
-
-        <tr>
-
-            <td>
-                {{ $price->apartment?->name }}
-            </td>
-
-            <td>
-                {{ $price->busStand?->name }}
-            </td>
-
-            <td>
-                ₹{{ $price->base_price }}
-            </td>
-
-            <td>
-                ₹{{ $price->peak_price }}
-            </td>
-
-            <td>
-                ₹{{ $price->holiday_price }}
-            </td>
-
-            <td>
-
-                <a href="{{ route('route-prices.edit',$price->id) }}"
-                   class="btn btn-warning btn-sm">
-
-                    Edit
-
-                </a>
-
-                <form action="{{ route('route-prices.destroy',$price->id) }}"
-                      method="POST"
-                      class="d-inline">
-
-                    @csrf
-                    @method('DELETE')
-
-                    <button class="btn btn-danger btn-sm">
-
-                        Delete
-
-                    </button>
-
+<x-table :headers="['Apartment', 'Bus Stand', 'Base Price', 'Peak Price', 'Holiday Price', 'Actions']">
+    @forelse($prices as $price)
+    <tr>
+        <td class="fw-semibold">{{ $price->apartment?->name }}</td>
+        <td>{{ $price->busStand?->name }}</td>
+        <td>₹{{ $price->base_price }}</td>
+        <td>₹{{ $price->peak_price }}</td>
+        <td>₹{{ $price->holiday_price }}</td>
+        <td>
+            <div class="d-flex gap-1">
+                <x-button href="{{ route('route-prices.edit', $price) }}" variant="outline" size="sm" icon="pencil">Edit</x-button>
+                <form action="{{ route('route-prices.destroy', $price) }}" method="POST" onsubmit="return confirm('Delete?')">
+                    @csrf @method('DELETE')
+                    <x-button type="submit" variant="danger" size="sm" icon="trash">Delete</x-button>
                 </form>
-
-            </td>
-
-        </tr>
-
-        @endforeach
-
-    </tbody>
-
-</table>
+            </div>
+        </td>
+    </tr>
+    @empty
+    <tr><td colspan="6" class="text-center text-muted py-4">No route prices found.</td></tr>
+    @endforelse
+    <x-slot name="pagination">{{ $prices->links() }}</x-slot>
+</x-table>
 
 @endsection

@@ -3,68 +3,48 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\TimeSlot;
 use App\Models\Booking;
+use App\Models\TimeSlot;
 use App\Models\Vehicle;
+use App\Services\BookingService;
+use App\Traits\ApiResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class SlotApiController extends Controller
 {
+    use ApiResponse;
+
     public function availableSlots(Request $request)
     {
-        $request->validate([
+        $request->validate(['booking_date' => 'required|date']);
 
-            'booking_date' => 'required|date',
+        $cacheKey = 'available_slots:'.$request->booking_date;
 
-        ]);
+        $slots = Cache::remember($cacheKey, now()->addMinutes(5), function () use ($request) {
+            $timeSlots = TimeSlot::where('status', 1)->get();
+            $vehiclesCount = Vehicle::where('status', 1)->count();
+            $response = [];
 
-        $slots = TimeSlot::where(
-            'status',
-            1
-        )->get();
+            foreach ($timeSlots as $slot) {
+                $bookedCount = Booking::where('booking_date', $request->booking_date)
+                    ->where('slot_time', $slot->slot_time)
+                    ->whereIn('status', BookingService::ACTIVE_STATUSES)
+                    ->count();
 
-        $vehiclesCount = Vehicle::where(
-            'status',
-            1
-        )->count();
+                $available = max(0, $vehiclesCount - $bookedCount);
 
-        $response = [];
+                $response[] = [
+                    'time_slot_id' => $slot->id,
+                    'slot_time' => $slot->slot_time,
+                    'available_vehicles' => $available,
+                    'is_available' => $available > 0,
+                ];
+            }
 
-        foreach ($slots as $slot) {
+            return $response;
+        });
 
-            $bookedCount = Booking::where(
-                'booking_date',
-                $request->booking_date
-            )
-            ->where(
-                'slot_time',
-                $slot->slot_time
-            )
-            ->whereIn('status', [
-                'pending',
-                'confirmed'
-            ])
-            ->count();
-
-            $available = $vehiclesCount - $bookedCount;
-
-            $response[] = [
-
-                'slot_time' => $slot->slot_time,
-
-                'available_vehicles' => $available,
-
-                'is_available' => $available > 0
-
-            ];
-        }
-
-        return response()->json([
-
-            'status' => true,
-
-            'slots' => $response
-
-        ]);
+        return $this->success(['slots' => $slots]);
     }
 }

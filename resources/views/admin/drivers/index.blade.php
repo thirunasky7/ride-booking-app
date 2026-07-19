@@ -1,81 +1,42 @@
 @extends('admin.layout')
 
+@section('title', 'Drivers')
+
 @section('content')
 
-<div class="d-flex justify-content-between mb-3">
+@include('admin.partials.page-header', [
+    'title' => 'Drivers',
+    'subtitle' => 'Manage driver profiles',
+    'action' => route('drivers.create'),
+    'actionLabel' => 'Add Driver',
+])
 
-    <h3>Drivers</h3>
-
-    <a href="{{ route('drivers.create') }}"
-       class="btn btn-primary">
-        Add Driver
-    </a>
-
-</div>
-
-@if(session('success'))
-
-<div class="alert alert-success">
-    {{ session('success') }}
-</div>
-
-@endif
-
-<table class="table table-bordered">
-
+<x-table :headers="['ID', 'Name', 'Mobile', 'License', 'Status', 'Actions']">
+    @forelse($drivers as $driver)
     <tr>
-        <th>ID</th>
-        <th>Name</th>
-        <th>Mobile</th>
-        <th>License</th>
-        <th>Status</th>
-        <th>Action</th>
-    </tr>
-
-    @foreach($drivers as $driver)
-
-    <tr>
-
-        <td>{{ $driver->id }}</td>
-
-        <td>{{ $driver->name }}</td>
-
+        <td><span class="badge bg-light text-dark">#{{ $driver->id }}</span></td>
+        <td class="fw-semibold">{{ $driver->name }}</td>
         <td>{{ $driver->mobile }}</td>
-
-        <td>{{ $driver->license_number }}</td>
-
+        <td class="text-muted small">{{ $driver->license_number }}</td>
         <td>
-            {{ $driver->status ? 'Active' : 'Inactive' }}
+            <span class="badge bg-{{ $driver->status ? 'success' : 'secondary' }}">
+                {{ $driver->status ? 'Active' : 'Inactive' }}
+            </span>
         </td>
-
         <td>
-
-            <a href="{{ route('drivers.edit',$driver->id) }}"
-               class="btn btn-warning btn-sm">
-                Edit
-            </a>
-
-            <form action="{{ route('drivers.destroy',$driver->id) }}"
-                  method="POST"
-                  class="d-inline">
-
-                @csrf
-                @method('DELETE')
-
-                <button class="btn btn-danger btn-sm">
-                    Delete
-                </button>
-
-            </form>
-
+            <div class="d-flex gap-1">
+                <x-button href="{{ route('drivers.edit', $driver) }}" variant="outline" size="sm" icon="pencil">Edit</x-button>
+                <form action="{{ route('drivers.destroy', $driver) }}" method="POST" onsubmit="return confirm('Delete?')">
+                    @csrf @method('DELETE')
+                    <x-button type="submit" variant="danger" size="sm" icon="trash">Delete</x-button>
+                </form>
+            </div>
         </td>
-
     </tr>
-
-    @endforeach
-
-</table>
-
-{{ $drivers->links() }}
+    @empty
+    <tr><td colspan="6" class="text-center text-muted py-4">No drivers found.</td></tr>
+    @endforelse
+    <x-slot name="pagination">{{ $drivers->links() }}</x-slot>
+</x-table>
 
 @endsection

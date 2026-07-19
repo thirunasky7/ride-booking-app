@@ -11,15 +11,32 @@ class Booking extends Model
         'vehicle_id',
         'apartment_id',
         'bus_stand_id',
+        'time_slot_id',
         'booking_date',
         'slot_time',
         'trip_type',
+        'booking_type',
         'status',
-        'price'
+        'price',
+        'commission_amount',
+        'driver_amount',
+        'pickup_address',
+        'pickup_lat',
+        'pickup_lng',
+        'drop_address',
+        'drop_lat',
+        'drop_lng',
     ];
 
     protected $casts = [
         'booking_date' => 'date',
+        'price' => 'decimal:2',
+        'commission_amount' => 'decimal:2',
+        'driver_amount' => 'decimal:2',
+        'pickup_lat' => 'decimal:7',
+        'pickup_lng' => 'decimal:7',
+        'drop_lat' => 'decimal:7',
+        'drop_lng' => 'decimal:7',
     ];
 
     public function customer()
@@ -40,5 +57,15 @@ class Booking extends Model
     public function vehicle()
     {
         return $this->belongsTo(Vehicle::class);
+    }
+
+    public function timeSlot()
+    {
+        return $this->belongsTo(TimeSlot::class);
+    }
+
+    public function driverEarning()
+    {
+        return $this->hasOne(DriverEarning::class);
     }
 }

@@ -10,5 +10,7 @@ class Setting extends Model
         'slot_gap_minutes',
         'booking_open_time',
         'booking_close_time',
+        'commission_percent',
+        'custom_route_price',
     ];
 }

@@ -42,15 +42,13 @@ class DashboardController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $totalEarnings = Booking::where(
-            'status',
-            'completed'
-        )->sum('price');
+        $totalEarnings = Booking::where('status', 'completed')->sum('price');
 
-        $todayEarnings = Booking::where(
-            'status',
-            'completed'
-        )
+        $totalCommission = Booking::where('status', 'completed')->sum('commission_amount');
+
+        $driverEarnings = Booking::where('status', 'completed')->sum('driver_amount');
+
+        $todayEarnings = Booking::where('status', 'completed')
         ->whereDate(
             'booking_date',
             today()
@@ -105,6 +103,8 @@ class DashboardController extends Controller
                 'completedTrips',
                 'cancelledTrips',
                 'totalEarnings',
+                'totalCommission',
+                'driverEarnings',
                 'todayEarnings',
                 'onlineDrivers',
                 'totalVehicles',

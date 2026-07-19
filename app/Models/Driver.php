@@ -16,6 +16,12 @@ class Driver extends Authenticatable
         'license_number',
         'password',
         'status',
+        'device_token',
+        'is_online',
+    ];
+
+    protected $casts = [
+        'is_online' => 'boolean',
     ];
 
     protected $hidden = [
@@ -25,5 +31,10 @@ class Driver extends Authenticatable
     public function vehicle()
     {
         return $this->hasOne(Vehicle::class);
+    }
+
+    public function earnings()
+    {
+        return $this->hasMany(DriverEarning::class);
     }
 }

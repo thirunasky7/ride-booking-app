@@ -3,181 +3,41 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\User;
-use App\Models\Otp;
-use Carbon\Carbon;
+use App\Http\Requests\OtpSendRequest;
+use App\Http\Requests\OtpVerifyRequest;
+use App\Services\OtpService;
+use App\Traits\ApiResponse;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | Send OTP
-    |--------------------------------------------------------------------------
-    */
+    use ApiResponse;
 
-    public function sendOtp(Request $request)
+    public function __construct(protected OtpService $otpService) {}
+
+    public function sendOtp(OtpSendRequest $request)
     {
-        $request->validate([
+        try {
+            $this->otpService->send($request->mobile);
 
-            'mobile' => 'required|digits:10',
-
-        ]);
-
-        /*
-        |--------------------------------------------------------------------------
-        | Generate OTP
-        |--------------------------------------------------------------------------
-        */
-
-        $otp = rand(1000, 9999);
-
-        /*
-        |--------------------------------------------------------------------------
-        | Delete Old OTP
-        |--------------------------------------------------------------------------
-        */
-
-        Otp::where('mobile', $request->mobile)->delete();
-
-        /*
-        |--------------------------------------------------------------------------
-        | Save OTP
-        |--------------------------------------------------------------------------
-        */
-
-        Otp::create([
-
-            'mobile' => $request->mobile,
-
-            'otp' => $otp,
-
-            'expires_at' => now()->addMinutes(5),
-
-        ]);
-
-        /*
-        |--------------------------------------------------------------------------
-        | SMS Integration
-        |--------------------------------------------------------------------------
-        */
-
-        /*
-        Use:
-        MSG91 / Twilio / Fast2SMS
-        */
-
-        return response()->json([
-
-            'status' => true,
-
-            'message' => 'OTP Sent Successfully',
-
-            'otp' => $otp
-
-        ]);
+            return $this->success(null, 'OTP sent successfully.');
+        } catch (ValidationException $e) {
+            return $this->error($e->getMessage(), 422, $e->errors());
+        }
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Verify OTP
-    |--------------------------------------------------------------------------
-    */
-
-    public function verifyOtp(Request $request)
+    public function verifyOtp(OtpVerifyRequest $request)
     {
-        $request->validate([
+        try {
+            $user = $this->otpService->verify($request->mobile, $request->otp);
+            $token = $user->createToken('customer-token')->plainTextToken;
 
-            'mobile' => 'required',
-
-            'otp' => 'required',
-
-        ]);
-
-        $otpData = Otp::where('mobile', $request->mobile)
-            ->where('otp', $request->otp)
-            ->first();
-
-        /*
-        |--------------------------------------------------------------------------
-        | Invalid OTP
-        |--------------------------------------------------------------------------
-        */
-
-        if (!$otpData) {
-
-            return response()->json([
-
-                'status' => false,
-
-                'message' => 'Invalid OTP'
-
-            ], 401);
+            return $this->success([
+                'token' => $token,
+                'user' => $user,
+            ], 'Login successful.');
+        } catch (ValidationException $e) {
+            return $this->error($e->getMessage(), 401, $e->errors());
         }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Expired OTP
-        |--------------------------------------------------------------------------
-        */
-
-        if (Carbon::now()->gt($otpData->expires_at)) {
-
-            return response()->json([
-
-                'status' => false,
-
-                'message' => 'OTP Expired'
-
-            ], 401);
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Customer Create/Login
-        |--------------------------------------------------------------------------
-        */
-
-        $user = User::firstOrCreate(
-
-            [
-                'mobile' => $request->mobile
-            ],
-
-            [
-                'name' => 'Customer',
-                'role' => 'customer',
-                'password' => bcrypt('123456'),
-            ]
-        );
-
-        /*
-        |--------------------------------------------------------------------------
-        | Create Token
-        |--------------------------------------------------------------------------
-        */
-
-        $token = $user->createToken('customer-token')
-            ->plainTextToken;
-
-        /*
-        |--------------------------------------------------------------------------
-        | Delete OTP
-        |--------------------------------------------------------------------------
-        */
-
-        $otpData->delete();
-
-        return response()->json([
-
-            'status' => true,
-
-            'message' => 'Login Success',
-
-            'token' => $token,
-
-            'user' => $user,
-
-        ]);
     }
 }

@@ -36,4 +36,22 @@ class User extends Authenticatable
     {
         return $this->hasMany(Booking::class);
     }
+
+    public function subscriptions()
+    {
+        return $this->hasMany(UserSubscription::class);
+    }
+
+    public function preBookings()
+    {
+        return $this->hasMany(PreBooking::class);
+    }
+
+    public function activeSubscription()
+    {
+        return $this->hasOne(UserSubscription::class)
+            ->where('status', 'active')
+            ->where('end_date', '>=', today())
+            ->latest('id');
+    }
 }

@@ -3,93 +3,36 @@
 namespace App\Http\Controllers\Website;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\User;
-use App\Models\Otp;
+use App\Http\Requests\OtpSendRequest;
+use App\Http\Requests\OtpVerifyRequest;
+use App\Services\OtpService;
 
 class CustomerAuthController extends Controller
 {
+    public function __construct(protected OtpService $otpService) {}
+
     public function login()
     {
         return view('website.customer.login');
     }
 
-    public function sendOtp(Request $request)
+    public function sendOtp(OtpSendRequest $request)
     {
-        $request->validate([
+        $this->otpService->send($request->mobile);
 
-            'mobile' => 'required|digits:10'
+        session(['mobile' => $request->mobile]);
 
-        ]);
-
-        $otp = rand(1000,9999);
-
-        Otp::updateOrCreate(
-
-            [
-                'mobile' => $request->mobile
-            ],
-
-            [
-                'otp' => $otp,
-                'expires_at' => now()->addMinutes(5)
-            ]
-        );
-
-        session([
-            'mobile' => $request->mobile
-        ]);
-
-        return back()->with([
-            'otp_sent' => true,
-            'otp' => $otp
-        ]);
+        return back()->with('otp_sent', true);
     }
 
-    public function verifyOtp(Request $request)
+    public function verifyOtp(OtpVerifyRequest $request)
     {
-        $request->validate([
+        $mobile = session('mobile', $request->mobile);
 
-            'otp' => 'required'
-
-        ]);
-
-        $mobile = session('mobile');
-
-        $otp = Otp::where(
-            'mobile',
-            $mobile
-        )
-        ->where(
-            'otp',
-            $request->otp
-        )
-        ->first();
-
-        if (!$otp) {
-
-            return back()->withErrors([
-                'otp' => 'Invalid OTP'
-            ]);
-        }
-
-        $user = User::firstOrCreate(
-
-            [
-                'mobile' => $mobile
-            ],
-
-            [
-                'name' => 'Customer',
-                'role' => 'customer',
-                'password' => bcrypt('123456')
-            ]
-        );
+        $user = $this->otpService->verify($mobile, $request->otp);
 
         auth()->login($user);
 
-        return redirect()->route(
-            'customer.dashboard'
-        );
+        return redirect()->route('customer.dashboard');
     }
 }

@@ -1,78 +1,41 @@
 @extends('admin.layout')
 
+@section('title', 'Apartments')
+
 @section('content')
 
-<div class="d-flex justify-content-between mb-3">
+@include('admin.partials.page-header', [
+    'title' => 'Apartments',
+    'subtitle' => 'Manage pickup locations',
+    'action' => route('apartments.create'),
+    'actionLabel' => 'Add Apartment',
+])
 
-    <h3>Apartments</h3>
-
-    <a href="{{ route('apartments.create') }}"
-       class="btn btn-primary">
-        Add Apartment
-    </a>
-
-</div>
-
-@if(session('success'))
-
-<div class="alert alert-success">
-    {{ session('success') }}
-</div>
-
-@endif
-
-<table class="table table-bordered">
-
+<x-table :headers="['ID', 'Name', 'Address', 'Status', 'Actions']">
+    @forelse($apartments as $apartment)
     <tr>
-        <th>ID</th>
-        <th>Name</th>
-        <th>Address</th>
-        <th>Status</th>
-        <th>Action</th>
-    </tr>
-
-    @foreach($apartments as $apartment)
-
-    <tr>
-
-        <td>{{ $apartment->id }}</td>
-
-        <td>{{ $apartment->name }}</td>
-
-        <td>{{ $apartment->address }}</td>
-
+        <td><span class="badge bg-light text-dark">#{{ $apartment->id }}</span></td>
+        <td class="fw-semibold">{{ $apartment->name }}</td>
+        <td class="text-muted small">{{ $apartment->address }}</td>
         <td>
-            {{ $apartment->status ? 'Active' : 'Inactive' }}
+            <span class="badge bg-{{ $apartment->status ? 'success' : 'secondary' }}">
+                {{ $apartment->status ? 'Active' : 'Inactive' }}
+            </span>
         </td>
-
         <td>
-
-            <a href="{{ route('apartments.edit',$apartment->id) }}"
-               class="btn btn-warning btn-sm">
-                Edit
-            </a>
-
-            <form action="{{ route('apartments.destroy',$apartment->id) }}"
-                  method="POST"
-                  class="d-inline">
-
-                @csrf
-                @method('DELETE')
-
-                <button class="btn btn-danger btn-sm">
-                    Delete
-                </button>
-
-            </form>
-
+            <div class="d-flex gap-1">
+                <x-button href="{{ route('apartments.edit', $apartment) }}" variant="outline" size="sm" icon="pencil">Edit</x-button>
+                <form action="{{ route('apartments.destroy', $apartment) }}" method="POST" onsubmit="return confirm('Delete?')">
+                    @csrf @method('DELETE')
+                    <x-button type="submit" variant="danger" size="sm" icon="trash">Delete</x-button>
+                </form>
+            </div>
         </td>
-
     </tr>
-
-    @endforeach
-
-</table>
-
-{{ $apartments->links() }}
+    @empty
+    <tr><td colspan="5" class="text-center text-muted py-4">No apartments found.</td></tr>
+    @endforelse
+    <x-slot name="pagination">{{ $apartments->links() }}</x-slot>
+</x-table>
 
 @endsection

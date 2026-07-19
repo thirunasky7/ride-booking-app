@@ -1,117 +1,40 @@
 @extends('admin.layout')
 
+@section('title', 'Time Slots')
+
 @section('content')
 
-<div class="d-flex justify-content-between align-items-center mb-3">
+@include('admin.partials.page-header', [
+    'title' => 'Time Slots',
+    'subtitle' => 'Manage booking time slots',
+    'action' => route('time-slots.create'),
+    'actionLabel' => 'Add Time Slot',
+])
 
-    <h3>Time Slots</h3>
-
-    <a href="{{ route('time-slots.create') }}"
-       class="btn btn-primary">
-        Add Time Slot
-    </a>
-
-</div>
-
-@if(session('success'))
-
-<div class="alert alert-success">
-    {{ session('success') }}
-</div>
-
-@endif
-
-<table class="table table-bordered table-striped">
-
-    <thead>
-
-        <tr>
-
-            <th>ID</th>
-
-            <th>Slot Time</th>
-
-            <th>Status</th>
-
-            <th width="180">Action</th>
-
-        </tr>
-
-    </thead>
-
-    <tbody>
-
-        @forelse($timeSlots as $slot)
-
-        <tr>
-
-            <td>{{ $slot->id }}</td>
-
-            <td>
-                {{ \Carbon\Carbon::parse($slot->slot_time)->format('h:i A') }}
-            </td>
-
-            <td>
-
-                @if($slot->status)
-
-                    <span class="badge bg-success">
-                        Active
-                    </span>
-
-                @else
-
-                    <span class="badge bg-danger">
-                        Inactive
-                    </span>
-
-                @endif
-
-            </td>
-
-            <td>
-
-                <a href="{{ route('time-slots.edit',$slot->id) }}"
-                   class="btn btn-warning btn-sm">
-                    Edit
-                </a>
-
-                <form action="{{ route('time-slots.destroy',$slot->id) }}"
-                      method="POST"
-                      class="d-inline">
-
-                    @csrf
-                    @method('DELETE')
-
-                    <button class="btn btn-danger btn-sm"
-                            onclick="return confirm('Delete Time Slot?')">
-
-                        Delete
-
-                    </button>
-
+<x-table :headers="['ID', 'Slot Time', 'Status', 'Actions']">
+    @forelse($timeSlots as $slot)
+    <tr>
+        <td><span class="badge bg-light text-dark">#{{ $slot->id }}</span></td>
+        <td class="fw-semibold">{{ \Carbon\Carbon::parse($slot->slot_time)->format('h:i A') }}</td>
+        <td>
+            <span class="badge bg-{{ $slot->status ? 'success' : 'secondary' }}">
+                {{ $slot->status ? 'Active' : 'Inactive' }}
+            </span>
+        </td>
+        <td>
+            <div class="d-flex gap-1">
+                <x-button href="{{ route('time-slots.edit', $slot) }}" variant="outline" size="sm" icon="pencil">Edit</x-button>
+                <form action="{{ route('time-slots.destroy', $slot) }}" method="POST" onsubmit="return confirm('Delete Time Slot?')">
+                    @csrf @method('DELETE')
+                    <x-button type="submit" variant="danger" size="sm" icon="trash">Delete</x-button>
                 </form>
-
-            </td>
-
-        </tr>
-
-        @empty
-
-        <tr>
-
-            <td colspan="4" class="text-center">
-                No Time Slots Found
-            </td>
-
-        </tr>
-
-        @endforelse
-
-    </tbody>
-
-</table>
-
-{{ $timeSlots->links() }}
+            </div>
+        </td>
+    </tr>
+    @empty
+    <tr><td colspan="4" class="text-center text-muted py-4">No time slots found.</td></tr>
+    @endforelse
+    <x-slot name="pagination">{{ $timeSlots->links() }}</x-slot>
+</x-table>
 
 @endsection

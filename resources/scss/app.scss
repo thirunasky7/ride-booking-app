@@ -1,0 +1,116 @@
+@import "bootstrap/scss/bootstrap";
+@import "bootstrap-icons/font/bootstrap-icons.css";
+
+:root {
+    --brand-primary: #0f766e;
+    --brand-primary-dark: #0d5c56;
+    --brand-accent: #f59e0b;
+    --brand-bg: #f0fdfa;
+    --brand-surface: #ffffff;
+    --brand-text: #134e4a;
+    --brand-muted: #5f7a78;
+    --brand-border: #ccfbf1;
+    --brand-shadow: 0 4px 24px rgba(15, 118, 110, 0.08);
+    --brand-radius: 16px;
+}
+
+body {
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+.admin-sidebar {
+    width: 260px;
+    min-height: 100vh;
+    background: linear-gradient(180deg, #0f766e 0%, #134e4a 100%);
+}
+
+.admin-sidebar .nav-link {
+    color: rgba(255, 255, 255, 0.8);
+    border-radius: 10px;
+    margin-bottom: 4px;
+    padding: 0.6rem 1rem;
+    transition: all 0.2s;
+}
+
+.admin-sidebar .nav-link:hover,
+.admin-sidebar .nav-link.active {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+.stat-card {
+    border: 1px solid var(--brand-border);
+    border-radius: var(--brand-radius);
+    box-shadow: var(--brand-shadow);
+    transition: transform 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+}
+
+.btn-brand {
+    background: linear-gradient(135deg, var(--brand-primary), #14b8a6);
+    border: none;
+    color: #fff;
+    font-weight: 600;
+}
+
+.btn-brand:hover {
+    color: #fff;
+    opacity: 0.92;
+}
+
+.card-modern {
+    background: var(--brand-surface);
+    border: 1px solid var(--brand-border);
+    border-radius: var(--brand-radius);
+    box-shadow: var(--brand-shadow);
+}
+
+.page-header {
+    background: linear-gradient(135deg, var(--brand-primary), #14b8a6);
+    color: #fff;
+    border-radius: var(--brand-radius);
+    padding: 1.5rem 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.marketing-hero {
+    background: linear-gradient(135deg, #0f766e 0%, #14b8a6 50%, #5eead4 100%);
+    color: #fff;
+    padding: 5rem 0;
+}
+
+.site-nav {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--brand-border);
+}
+
+.table-modern thead th {
+    background: var(--brand-bg);
+    border-bottom: 2px solid var(--brand-border);
+    font-weight: 600;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    padding: 0.85rem 1rem;
+}
+
+.table-modern td {
+    padding: 0.85rem 1rem;
+    vertical-align: middle;
+}
+
+.form-floating > .form-control:focus,
+.form-floating > .form-select:focus {
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 0.2rem rgba(15, 118, 110, 0.15);
+}
+
+.customer .page-header {
+    background: linear-gradient(135deg, var(--brand-primary), #14b8a6);
+    color: #fff;
+    border-radius: var(--brand-radius);
+    padding: 1.5rem 2rem;
+}

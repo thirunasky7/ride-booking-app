@@ -3,237 +3,115 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\Driver;
 use App\Models\Booking;
-use Carbon\Carbon;
+use App\Models\Driver;
+use App\Models\DriverEarning;
+use App\Services\DriverService;
+use App\Traits\ApiResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use RuntimeException;
 
 class DriverApiController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | Driver Login
-    |--------------------------------------------------------------------------
-    */
+    use ApiResponse;
+
+    public function __construct(protected DriverService $driverService) {}
 
     public function login(Request $request)
     {
         $request->validate([
-
             'mobile' => 'required',
-
             'password' => 'required',
-
         ]);
 
-        $driver = Driver::where(
-            'mobile',
-            $request->mobile
-        )->first();
+        $driver = Driver::where('mobile', $request->mobile)->first();
 
-        if (!$driver) {
-
-            return response()->json([
-
-                'status' => false,
-
-                'message' => 'Driver Not Found'
-
-            ]);
+        if (!$driver || !Hash::check($request->password, $driver->password)) {
+            return $this->error('Invalid credentials.', 401);
         }
 
-        if (!Hash::check(
-            $request->password,
-            $driver->password
-        )) {
+        $token = $driver->createToken('driver-token')->plainTextToken;
 
-            return response()->json([
-
-                'status' => false,
-
-                'message' => 'Invalid Password'
-
-            ]);
-        }
-
-        $token = $driver->createToken(
-            'driver-token'
-        )->plainTextToken;
-
-        return response()->json([
-
-            'status' => true,
-
-            'message' => 'Login Success',
-
+        return $this->success([
             'token' => $token,
-
             'driver' => $driver,
-
-        ]);
+        ], 'Login successful.');
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Dashboard
-    |--------------------------------------------------------------------------
-    */
 
     public function dashboard(Request $request)
     {
-        $driver = auth()->user();
+        $driver = $request->user();
 
-        $todayTrips = Booking::whereHas(
-            'vehicle',
-            function ($q) use ($driver) {
+        $todayTrips = Booking::whereHas('vehicle', fn ($q) => $q->where('driver_id', $driver->id))
+            ->whereDate('booking_date', today())
+            ->count();
 
-                $q->where(
-                    'driver_id',
-                    $driver->id
-                );
-            }
-        )
-        ->whereDate(
-            'booking_date',
-            today()
-        )
-        ->count();
+        $completedTrips = Booking::whereHas('vehicle', fn ($q) => $q->where('driver_id', $driver->id))
+            ->where('status', 'completed')
+            ->count();
 
-        $completedTrips = Booking::whereHas(
-            'vehicle',
-            function ($q) use ($driver) {
+        $totalEarnings = DriverEarning::where('driver_id', $driver->id)->sum('driver_amount');
 
-                $q->where(
-                    'driver_id',
-                    $driver->id
-                );
-            }
-        )
-        ->where('status', 'completed')
-        ->count();
-
-        return response()->json([
-
-            'status' => true,
-
+        return $this->success([
             'today_trips' => $todayTrips,
-
             'completed_trips' => $completedTrips,
-
+            'total_earnings' => $totalEarnings,
         ]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Today Trips
-    |--------------------------------------------------------------------------
-    */
-
-    public function todayTrips()
+    public function todayTrips(Request $request)
     {
-        $driver = auth()->user();
+        $driver = $request->user();
 
-        $bookings = Booking::with([
-            'customer',
-            'apartment',
-            'busStand'
-        ])
-        ->whereHas('vehicle', function ($q) use ($driver) {
+        $bookings = Booking::with(['customer', 'apartment', 'busStand'])
+            ->whereHas('vehicle', fn ($q) => $q->where('driver_id', $driver->id))
+            ->whereDate('booking_date', today())
+            ->orderBy('slot_time')
+            ->get();
 
-            $q->where(
-                'driver_id',
-                $driver->id
-            );
-        })
-        ->whereDate(
-            'booking_date',
-            today()
-        )
-        ->orderBy('slot_time')
-        ->get();
-
-        return response()->json([
-
-            'status' => true,
-
-            'trips' => $bookings
-
-        ]);
+        return $this->success(['trips' => $bookings]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Start Trip
-    |--------------------------------------------------------------------------
-    */
-
-    public function startTrip($id)
+    public function earnings(Request $request)
     {
-        $booking = Booking::findOrFail($id);
+        $earnings = DriverEarning::with('booking')
+            ->where('driver_id', $request->user()->id)
+            ->latest()
+            ->paginate(20);
 
-        $booking->update([
-
-            'status' => 'started'
-
-        ]);
-
-        return response()->json([
-
-            'status' => true,
-
-            'message' => 'Trip Started'
-
-        ]);
+        return $this->success(['earnings' => $earnings]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Complete Trip
-    |--------------------------------------------------------------------------
-    */
-
-    public function completeTrip($id)
+    public function startTrip(Request $request, $id)
     {
-        $booking = Booking::findOrFail($id);
+        try {
+            $this->driverService->startTrip($request->user(), (int) $id);
 
-        $booking->update([
-
-            'status' => 'completed'
-
-        ]);
-
-        return response()->json([
-
-            'status' => true,
-
-            'message' => 'Trip Completed'
-
-        ]);
+            return $this->success(null, 'Trip started.');
+        } catch (RuntimeException $e) {
+            return $this->error($e->getMessage(), 403);
+        }
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Online / Offline
-    |--------------------------------------------------------------------------
-    */
+    public function completeTrip(Request $request, $id)
+    {
+        try {
+            $booking = $this->driverService->completeTrip($request->user(), (int) $id);
+
+            return $this->success(['booking' => $booking], 'Trip completed.');
+        } catch (RuntimeException $e) {
+            return $this->error($e->getMessage(), 403);
+        }
+    }
 
     public function toggleOnline(Request $request)
     {
-        $driver = auth()->user();
+        $request->validate(['is_online' => 'required|boolean']);
 
-        $driver->update([
+        $driver = $request->user();
+        $driver->update(['is_online' => $request->boolean('is_online')]);
 
-            'is_online' => $request->is_online
-
-        ]);
-
-        return response()->json([
-
-            'status' => true,
-
-            'message' => 'Status Updated'
-
-        ]);
+        return $this->success(['is_online' => $driver->is_online], 'Status updated.');
     }
 }

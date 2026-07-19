@@ -1,66 +1,165 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Apartment Shuttle — SaaS Bike Taxi Platform
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Production-ready Laravel 10 shuttle booking SaaS with admin panel, customer web portal, REST API, subscriptions, and pre-booking.
 
-## About Laravel
+## Tech Stack
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Backend:** PHP 8.1+, Laravel 10, Sanctum
+- **Frontend:** Bootstrap 5 (npm), Bootstrap Icons, Vite, SCSS
+- **Database:** MySQL
+- **Auth:** Breeze (admin), OTP (customers), Sanctum tokens (API)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Roles
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+| Role | Access |
+|------|--------|
+| **Super Admin** | `/admin/*` — full platform management |
+| **Customer** | `/customer/*` — book rides, subscriptions, pre-booking |
+| **Driver** | `/api/driver/*` — trips, earnings (mobile app) |
 
-## Learning Laravel
+## Quick Start
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+```bash
+composer install
+npm install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+npm run build
+php artisan serve
+```
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### Default Credentials
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+| Portal | URL | Login |
+|--------|-----|-------|
+| Admin | `/login` → `/admin/dashboard` | `admin@gmail.com` / `12345678` |
+| Customer | `/customer/login` | Mobile OTP (SMS integration required) |
+| Driver API | `POST /api/driver/login` | `9876543210` / `driver123` |
 
-## Laravel Sponsors
+## Architecture
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```
+app/
+├── Services/
+│   ├── BookingService.php      # Vehicle assignment, booking CRUD
+│   ├── PricingService.php      # Base/peak/holiday + commission
+│   ├── SubscriptionService.php # Plans, ride limits, expiry
+│   ├── DriverService.php       # Trip ownership validation
+│   └── OtpService.php          # Secure OTP with rate limits
+├── Http/Requests/              # Form request validation
+└── Traits/ApiResponse.php      # Standardized API format
+```
 
-### Premium Partners
+## API Response Format
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+```json
+{
+  "status": true,
+  "message": "Success message",
+  "data": {}
+}
+```
 
-## Contributing
+## API Endpoints
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Auth
+- `POST /api/send-otp` — Send OTP (rate limited)
+- `POST /api/verify-otp` — Verify & get Sanctum token
 
-## Code of Conduct
+### Booking
+- `GET /api/available-slots?booking_date=YYYY-MM-DD`
+- `POST /api/create-booking` (auth)
+- `PUT /api/modify-booking/{id}` (auth)
+- `POST /api/cancel-booking/{id}` (auth)
+- `GET /api/booking-history` (auth)
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Pre-Booking
+- `GET /api/pre-bookings` (auth)
+- `POST /api/pre-bookings` (auth)
+- `POST /api/pre-bookings/{id}/confirm` (auth)
 
-## Security Vulnerabilities
+### Subscription
+- `GET /api/subscription-plans`
+- `GET /api/my-subscription` (auth)
+- `POST /api/purchase-subscription` (auth)
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Driver
+- `POST /api/driver/login`
+- `GET /api/driver/dashboard` (auth)
+- `GET /api/driver/today-trips` (auth)
+- `GET /api/driver/earnings` (auth)
+- `POST /api/driver/start-trip/{id}` (auth)
+- `POST /api/driver/complete-trip/{id}` (auth)
+
+## Postman Collection
+
+Import `postman/Apartment-Shuttle-API.postman_collection.json` into Postman.
+
+Set variables:
+- `base_url` = `http://localhost:8000/api`
+- `customer_token` = token from verify-otp
+- `driver_token` = token from driver login
+
+## Scheduled Tasks
+
+```bash
+php artisan subscriptions:expire  # Also runs daily via scheduler
+```
+
+Add to crontab: `* * * * * php /path/to/artisan schedule:run`
+
+## Testing
+
+```bash
+php artisan test
+```
+
+Tests cover booking flow, subscription logic, and driver authorization.
+
+## Business Model
+
+1. **Subscriptions** — Monthly plans (Starter / Commuter / Unlimited)
+2. **Daily Booking** — Pay-per-ride with peak/holiday pricing
+3. **Pre-Booking** — Schedule future rides in advance
+4. **Commission** — Admin earns configurable % per completed ride
+
+## Marketing Pages
+
+- `/` — Home
+- `/about` — About
+- `/services` — Services
+- `/pricing` — Subscription plans
+- `/contact` — Contact
+- `/driver-register` — Driver onboarding
+
+## Security Features
+
+- OTP never returned in API responses
+- OTP expiry + retry limits + send rate limiting
+- Random secure passwords for OTP-created users
+- Driver can only act on assigned vehicle bookings
+- Sanctum token authentication
+- Middleware aliases for `admin` and `customer` roles
+
+## Development
+
+```bash
+npm run dev     # Vite HMR
+php artisan serve
+```
+
+## Mobile Apps (Android)
+
+Two separate Flutter apps live under `mobile/`:
+
+| App | Path |
+|-----|------|
+| Customer | `mobile/customer_app` |
+| Driver | `mobile/driver_app` |
+
+See [mobile/README.md](mobile/README.md) for setup, API URL config, and run commands.
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+MIT
