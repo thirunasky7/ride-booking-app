@@ -132,6 +132,9 @@ Tests cover booking flow, subscription logic, and driver authorization.
 - `/pricing` — Subscription plans
 - `/contact` — Contact
 - `/driver-register` — Driver onboarding
+- `/privacy-policy` — Privacy Policy (Play Console)
+- `/terms` — Terms of Service
+- `/account-deletion` — Account deletion instructions (Play Console Data safety)
 
 ## Security Features
 

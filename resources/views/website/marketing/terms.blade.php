@@ -11,7 +11,7 @@
         <p>Apartment Shuttle provides apartment-to-bus-stand shuttle booking. Availability depends on vehicles, slots, and location coverage.</p>
 
         <h5 class="fw-bold mt-4">Accounts</h5>
-        <p>You must provide an accurate mobile number. You are responsible for activity under your account. Do not share OTPs.</p>
+        <p>You must provide an accurate mobile number. You are responsible for activity under your account. Do not share OTPs. Customers may delete their account as described on our <a href="{{ route('marketing.account-deletion') }}">Account deletion</a> page.</p>
 
         <h5 class="fw-bold mt-4">Bookings & payments</h5>
         <p>Fares are shown before confirmation. Payment status may be marked in-app (for example Cash/UPI). Cancel only when the booking status allows cancellation.</p>

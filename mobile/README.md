@@ -58,11 +58,16 @@ flutter run
 
 ## Run Driver app
 
+**Android only** (no web/Chrome). Select an Android emulator or physical device — not Chrome.
+
 ```bash
 cd mobile/driver_app
 flutter pub get
-flutter run
+flutter devices
+flutter run -d <android-device-id>
 ```
+
+With one Android device connected, `flutter run` is enough.
 
 **Seeded driver (from README):**
 
@@ -83,20 +88,19 @@ POST /api/bookings/{id}/payment-status
 OTP is fixed to **1234** by default (`OTP_FIXED_CODE=1234` in `.env`).  
 To use random OTPs later, set `OTP_FIXED_CODE=` empty and integrate SMS.
 
-### Play Store policy pages
+### Play Store signing
 
-Use these URLs in Play Console:
+See [SIGNING.md](SIGNING.md). Keystores and `key.properties` are gitignored.
+
+Public policy pages (also linked from the customer app Profile screen):
 
 - Privacy: `https://book.zennexs.com/privacy-policy`
 - Terms: `https://book.zennexs.com/terms`
 - Account deletion: `https://book.zennexs.com/account-deletion`
 
-In-app: Profile → Privacy / Terms / Delete account.
-
-Run migration after pull:
-
-```bash
-php artisan migrate
+```powershell
+cd mobile\customer_app
+flutter build appbundle --release
 ```
 
 

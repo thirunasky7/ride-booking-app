@@ -5,6 +5,7 @@ import '../models/models.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_client.dart';
 import '../services/driver_api.dart';
+import '../theme/app_theme.dart';
 import 'earnings_screen.dart';
 import 'login_screen.dart';
 import 'trips_screen.dart';
@@ -28,7 +29,6 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
-    final driver = context.watch<AuthProvider>().driver;
     final pages = [
       _DashboardTab(api: _api),
       TripsScreen(api: _api),
@@ -36,31 +36,27 @@ class _HomeShellState extends State<HomeShell> {
     ];
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(driver?.name.isNotEmpty == true ? driver!.name : 'Driver'),
-        actions: [
-          IconButton(
-            tooltip: 'Logout',
-            onPressed: () async {
-              await context.read<AuthProvider>().logout();
-              if (!context.mounted) return;
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
-                (_) => false,
-              );
-            },
-            icon: const Icon(Icons.logout),
-          ),
-        ],
-      ),
+      backgroundColor: AppTheme.bg,
       body: pages[_index],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.route_outlined), selectedIcon: Icon(Icons.route), label: 'Trips'),
-          NavigationDestination(icon: Icon(Icons.payments_outlined), selectedIcon: Icon(Icons.payments), label: 'Earnings'),
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home_rounded),
+            label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.route_outlined),
+            selectedIcon: Icon(Icons.route_rounded),
+            label: 'Trips',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.account_balance_wallet_outlined),
+            selectedIcon: Icon(Icons.account_balance_wallet_rounded),
+            label: 'Earnings',
+          ),
         ],
       ),
     );
@@ -129,44 +125,197 @@ class _DashboardTabState extends State<_DashboardTab> {
     }
   }
 
+  Future<void> _logout() async {
+    await context.read<AuthProvider>().logout();
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (_) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final driver = context.watch<AuthProvider>().driver;
     final online = driver?.isOnline ?? false;
+    final name = (driver?.name.isNotEmpty == true) ? driver!.name : 'Partner';
 
-    if (loading) return const Center(child: CircularProgressIndicator());
+    if (loading) {
+      return const Scaffold(
+        backgroundColor: AppTheme.bg,
+        body: Center(child: CircularProgressIndicator(color: AppTheme.yellow)),
+      );
+    }
 
     return RefreshIndicator(
+      color: AppTheme.black,
       onRefresh: _load,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Card(
-            child: SwitchListTile(
-              title: Text(online ? 'You are online' : 'You are offline'),
-              subtitle: Text(online ? 'Receiving trip assignments' : 'Go online to start receiving trips'),
-              value: online,
-              onChanged: toggling ? null : _toggleOnline,
-              secondary: Icon(
-                online ? Icons.wifi : Icons.wifi_off,
-                color: online ? Colors.green : Colors.grey,
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(
+            child: Container(
+              padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 16, 20, 28),
+              decoration: const BoxDecoration(
+                color: AppTheme.black,
+                borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Hi, $name',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 22,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              online ? 'You are online · ready for trips' : 'You are offline',
+                              style: TextStyle(color: Colors.white.withValues(alpha: 0.65)),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: _logout,
+                        icon: const Icon(Icons.logout_rounded, color: Colors.white),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.charcoal,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: online ? AppTheme.online.withValues(alpha: 0.5) : Colors.white12,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: online ? AppTheme.online : Colors.grey,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            online ? 'Accepting trips' : 'Go online to get trips',
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        Switch.adaptive(
+                          value: online,
+                          activeThumbColor: AppTheme.black,
+                          activeTrackColor: AppTheme.yellow,
+                          onChanged: toggling ? null : _toggleOnline,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(child: _StatCard(label: "Today's trips", value: '$todayTrips', icon: Icons.today)),
-              const SizedBox(width: 12),
-              Expanded(child: _StatCard(label: 'Completed', value: '$completedTrips', icon: Icons.check_circle_outline)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _StatCard(
-            label: 'Total earnings',
-            value: '₹${totalEarnings.toStringAsFixed(0)}',
-            icon: Icons.currency_rupee,
-            wide: true,
+          SliverPadding(
+            padding: const EdgeInsets.all(20),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFFE082), AppTheme.yellow],
+                    ),
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Total earnings',
+                              style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.black),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              '₹${totalEarnings.toStringAsFixed(0)}',
+                              style: const TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w900,
+                                color: AppTheme.black,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: AppTheme.black,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(Icons.payments_rounded, color: AppTheme.yellow, size: 28),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _MetricCard(
+                        label: "Today's trips",
+                        value: '$todayTrips',
+                        icon: Icons.today_rounded,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _MetricCard(
+                        label: 'Completed',
+                        value: '$completedTrips',
+                        icon: Icons.check_circle_outline_rounded,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Quick tip',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: const Text(
+                    'Stay online during peak slots to get more shuttle assignments. Start trips on time and mark them complete after drop-off.',
+                    style: TextStyle(color: AppTheme.muted, height: 1.4),
+                  ),
+                ),
+              ]),
+            ),
           ),
         ],
       ),
@@ -174,42 +323,42 @@ class _DashboardTabState extends State<_DashboardTab> {
   }
 }
 
-class _StatCard extends StatelessWidget {
-  const _StatCard({
+class _MetricCard extends StatelessWidget {
+  const _MetricCard({
     required this.label,
     required this.value,
     required this.icon,
-    this.wide = false,
   });
 
   final String label;
   final String value;
   final IconData icon;
-  final bool wide;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: const Color(0xFFDBEAFE),
-              child: Icon(icon, color: const Color(0xFF1D4ED8)),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppTheme.yellow.withValues(alpha: 0.35),
+              borderRadius: BorderRadius.circular(12),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label, style: TextStyle(color: Colors.grey.shade600)),
-                  Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                ],
-              ),
-            ),
-          ],
-        ),
+            child: Icon(icon, color: AppTheme.black),
+          ),
+          const SizedBox(height: 14),
+          Text(label, style: const TextStyle(color: AppTheme.muted, fontSize: 13)),
+          const SizedBox(height: 4),
+          Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
+        ],
       ),
     );
   }

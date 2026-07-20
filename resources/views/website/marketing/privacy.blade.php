@@ -5,7 +5,7 @@
     <div class="page-header mb-4"><h1 class="fw-bold mb-0">Privacy Policy</h1></div>
     <div class="card-modern p-4">
         <p class="text-muted small">Last updated: {{ now()->toFormattedDateString() }}</p>
-        <p>Apartment Shuttle (“we”, “our”, “us”) operates the Apartment Shuttle mobile applications and website. This Privacy Policy explains what information we collect and how we use it.</p>
+        <p>Apartment Shuttle (“we”, “our”, “us”), also known as Azhai on the Google Play Store, operates the Apartment Shuttle mobile applications and website. This Privacy Policy explains what information we collect and how we use it.</p>
 
         <h5 class="fw-bold mt-4">Information we collect</h5>
         <ul>

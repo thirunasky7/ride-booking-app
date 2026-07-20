@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
@@ -25,6 +26,14 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
+    if (_mobileCtrl.text.trim().length < 10) {
+      _toast('Enter a valid mobile number');
+      return;
+    }
+    if (_passwordCtrl.text.isEmpty) {
+      _toast('Enter your password');
+      return;
+    }
     final ok = await context.read<AuthProvider>().login(
           _mobileCtrl.text.trim(),
           _passwordCtrl.text,
@@ -35,11 +44,12 @@ class _LoginScreenState extends State<LoginScreen> {
         MaterialPageRoute(builder: (_) => const HomeShell()),
       );
     } else {
-      final err = context.read<AuthProvider>().error;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(err ?? 'Login failed')),
-      );
+      _toast(context.read<AuthProvider>().error ?? 'Login failed');
     }
+  }
+
+  void _toast(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   @override
@@ -47,51 +57,76 @@ class _LoginScreenState extends State<LoginScreen> {
     final auth = context.watch<AuthProvider>();
 
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF1D4ED8), Color(0xFF1E3A8A), Color(0xFF172554)],
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Card(
-                elevation: 8,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
+      backgroundColor: AppTheme.black,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              flex: 4,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 36, 24, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppTheme.yellow,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(Icons.local_taxi_rounded, size: 34, color: AppTheme.black),
+                    ),
+                    const SizedBox(height: 28),
+                    const Text(
+                      'Partner\nDashboard',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 34,
+                        fontWeight: FontWeight.w900,
+                        height: 1.1,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Manage trips & earnings in one place',
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: 15),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Expanded(
+              flex: 6,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+                ),
+                child: SingleChildScrollView(
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Icon(Icons.local_taxi, size: 56, color: AppTheme.primary),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Shuttle Driver',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.primary,
-                            ),
+                      const Text(
+                        'Driver login',
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Sign in to manage your trips',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey.shade600),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Use your registered mobile & password',
+                        style: TextStyle(color: AppTheme.muted),
                       ),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 24),
                       TextField(
                         controller: _mobileCtrl,
                         keyboardType: TextInputType.phone,
+                        maxLength: 10,
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                         decoration: const InputDecoration(
                           labelText: 'Mobile number',
-                          prefixIcon: Icon(Icons.phone_android),
+                          prefixIcon: Icon(Icons.phone_android_rounded),
+                          counterText: '',
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -100,30 +135,30 @@ class _LoginScreenState extends State<LoginScreen> {
                         obscureText: _obscure,
                         decoration: InputDecoration(
                           labelText: 'Password',
-                          prefixIcon: const Icon(Icons.lock_outline),
+                          prefixIcon: const Icon(Icons.lock_outline_rounded),
                           suffixIcon: IconButton(
                             onPressed: () => setState(() => _obscure = !_obscure),
-                            icon: Icon(_obscure ? Icons.visibility : Icons.visibility_off),
+                            icon: Icon(_obscure ? Icons.visibility_rounded : Icons.visibility_off_rounded),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
                       FilledButton(
                         onPressed: auth.loading ? null : _login,
                         child: auth.loading
                             ? const SizedBox(
                                 height: 22,
                                 width: 22,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.black),
                               )
-                            : const Text('Login'),
+                            : const Text('Continue'),
                       ),
                     ],
                   ),
                 ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );

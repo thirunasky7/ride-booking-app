@@ -39,7 +39,12 @@
 <footer class="bg-dark text-white-50 py-4 mt-5">
     <div class="container d-flex flex-wrap justify-content-between gap-3">
         <span>&copy; {{ date('Y') }} Apartment Shuttle. All rights reserved.</span>
-        <span><a href="{{ route('marketing.driver-register') }}" class="text-white-50">Become a Driver</a></span>
+        <span class="d-flex flex-wrap gap-3">
+            <a href="{{ route('marketing.privacy') }}" class="text-white-50">Privacy</a>
+            <a href="{{ route('marketing.terms') }}" class="text-white-50">Terms</a>
+            <a href="{{ route('marketing.account-deletion') }}" class="text-white-50">Account deletion</a>
+            <a href="{{ route('marketing.driver-register') }}" class="text-white-50">Become a Driver</a>
+        </span>
     </div>
 </footer>
 @stack('scripts')

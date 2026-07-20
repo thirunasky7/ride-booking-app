@@ -25,7 +25,7 @@ class DriverApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
-        title: 'Shuttle Driver',
+        title: 'Azhai Driver',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light(),
         home: const _Root(),
@@ -42,7 +42,8 @@ class _Root extends StatelessWidget {
     final auth = context.watch<AuthProvider>();
     if (!auth.initialized) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        backgroundColor: AppTheme.black,
+        body: Center(child: CircularProgressIndicator(color: AppTheme.yellow)),
       );
     }
     return auth.isLoggedIn ? const HomeShell() : const LoginScreen();

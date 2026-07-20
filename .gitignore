@@ -3,6 +3,7 @@
 /public/storage
 /storage/*.key
 /mobile/*
+/mobile
 /vendor
 .env
 .env.backup
@@ -17,3 +18,5 @@ yarn-error.log
 /.idea
 /.vscode
 .env.example
+/mobile
+/mobile
