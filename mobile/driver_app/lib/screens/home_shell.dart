@@ -8,6 +8,7 @@ import '../services/driver_api.dart';
 import '../theme/app_theme.dart';
 import 'earnings_screen.dart';
 import 'login_screen.dart';
+import 'profile_screen.dart';
 import 'trips_screen.dart';
 
 class HomeShell extends StatefulWidget {
@@ -30,9 +31,10 @@ class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      _DashboardTab(api: _api),
+      _DashboardTab(api: _api, onProfile: () => setState(() => _index = 3)),
       TripsScreen(api: _api),
       EarningsScreen(api: _api),
+      const ProfileScreen(),
     ];
 
     return Scaffold(
@@ -57,6 +59,11 @@ class _HomeShellState extends State<HomeShell> {
             selectedIcon: Icon(Icons.account_balance_wallet_rounded),
             label: 'Earnings',
           ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person_rounded),
+            label: 'Profile',
+          ),
         ],
       ),
     );
@@ -64,9 +71,10 @@ class _HomeShellState extends State<HomeShell> {
 }
 
 class _DashboardTab extends StatefulWidget {
-  const _DashboardTab({required this.api});
+  const _DashboardTab({required this.api, required this.onProfile});
 
   final DriverApi api;
+  final VoidCallback onProfile;
 
   @override
   State<_DashboardTab> createState() => _DashboardTabState();
@@ -125,15 +133,6 @@ class _DashboardTabState extends State<_DashboardTab> {
     }
   }
 
-  Future<void> _logout() async {
-    await context.read<AuthProvider>().logout();
-    if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-      (_) => false,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final driver = context.watch<AuthProvider>().driver;
@@ -186,8 +185,8 @@ class _DashboardTabState extends State<_DashboardTab> {
                         ),
                       ),
                       IconButton(
-                        onPressed: _logout,
-                        icon: const Icon(Icons.logout_rounded, color: Colors.white),
+                        onPressed: widget.onProfile,
+                        icon: const Icon(Icons.person_outline_rounded, color: Colors.white),
                       ),
                     ],
                   ),

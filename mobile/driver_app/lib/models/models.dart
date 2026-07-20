@@ -21,6 +21,7 @@ class DriverModel {
     required this.id,
     required this.name,
     required this.mobile,
+    this.licenseNumber,
     this.isOnline = false,
   });
 
@@ -29,6 +30,7 @@ class DriverModel {
       id: parseInt(json['id']) ?? 0,
       name: parseString(json['name']),
       mobile: parseString(json['mobile']),
+      licenseNumber: json['license_number']?.toString(),
       isOnline: json['is_online'] == true || json['is_online'] == 1,
     );
   }
@@ -36,13 +38,19 @@ class DriverModel {
   final int id;
   final String name;
   final String mobile;
+  final String? licenseNumber;
   final bool isOnline;
 
-  DriverModel copyWith({bool? isOnline}) {
+  DriverModel copyWith({
+    String? name,
+    String? licenseNumber,
+    bool? isOnline,
+  }) {
     return DriverModel(
       id: id,
-      name: name,
+      name: name ?? this.name,
       mobile: mobile,
+      licenseNumber: licenseNumber ?? this.licenseNumber,
       isOnline: isOnline ?? this.isOnline,
     );
   }

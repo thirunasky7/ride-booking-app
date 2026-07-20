@@ -18,7 +18,11 @@ Route::get('/available-slots', [SlotApiController::class, 'availableSlots']);
 Route::get('/apartments', [CatalogApiController::class, 'apartments']);
 Route::get('/bus-stands', [CatalogApiController::class, 'busStands']);
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'driver.api'])->group(function () {
+    Route::get('/driver/profile', [DriverApiController::class, 'profile']);
+    Route::put('/driver/profile', [DriverApiController::class, 'updateProfile']);
+    Route::post('/driver/logout', [DriverApiController::class, 'logout']);
+    Route::delete('/driver/account', [DriverApiController::class, 'deleteAccount']);
     Route::get('/driver/dashboard', [DriverApiController::class, 'dashboard']);
     Route::get('/driver/today-trips', [DriverApiController::class, 'todayTrips']);
     Route::get('/driver/earnings', [DriverApiController::class, 'earnings']);

@@ -59,6 +59,29 @@ class ApiClient {
     return _parse(response);
   }
 
+  Future<Map<String, dynamic>> put(
+    String path, {
+    Map<String, dynamic>? body,
+    bool auth = true,
+  }) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}$path');
+    final response = await http.put(
+      uri,
+      headers: await _headers(auth: auth),
+      body: body == null ? null : jsonEncode(body),
+    );
+    return _parse(response);
+  }
+
+  Future<Map<String, dynamic>> delete(
+    String path, {
+    bool auth = true,
+  }) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}$path');
+    final response = await http.delete(uri, headers: await _headers(auth: auth));
+    return _parse(response);
+  }
+
   Future<Map<String, String>> _headers({required bool auth}) async {
     final headers = <String, String>{
       'Accept': 'application/json',

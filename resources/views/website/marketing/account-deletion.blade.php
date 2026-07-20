@@ -38,13 +38,21 @@
         <p class="mb-0">Some information may be retained only where required by law or legitimate operational needs (for example financial, tax, fraud-prevention, or dispute records). Retained data is limited to what is necessary and is not used for marketing.</p>
 
         <h5 class="fw-bold mt-4">Driver accounts</h5>
-        <p>
-            Driver accounts are managed differently and are not deleted through the customer app’s
-            <strong>Delete account</strong> flow. Drivers who want their account removed should contact
-            operations at <a href="mailto:drivers@apartmentshuttle.com">drivers@apartmentshuttle.com</a>
-            or use the <a href="{{ route('marketing.contact') }}">Contact</a> page with subject
-            <strong>Driver account deletion</strong>, including their registered mobile number.
-        </p>
+        <p>You can delete your driver account in either of these ways:</p>
+        <ol>
+            <li>
+                <strong>In the app (recommended):</strong> open the driver app → <strong>Profile</strong> → <strong>Delete account</strong> → confirm.
+                This calls our API (<code>DELETE /api/driver/account</code>) and removes your driver account immediately while you are signed in.
+            </li>
+            <li>
+                <strong>By request (web):</strong> contact operations at
+                <a href="mailto:drivers@apartmentshuttle.com">drivers@apartmentshuttle.com</a>
+                or use the <a href="{{ route('marketing.contact') }}">Contact</a> page with subject
+                <strong>Driver account deletion</strong>, including your registered mobile number.
+                We process verified requests within a reasonable time (typically within 30 days).
+            </li>
+        </ol>
+        <p>When a driver account is deleted, we remove your profile, login tokens, and driver-specific records from active systems. Some operational or financial records may be retained where required by law.</p>
 
         <h5 class="fw-bold mt-4">More information</h5>
         <p class="mb-0">

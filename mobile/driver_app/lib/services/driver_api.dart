@@ -48,4 +48,41 @@ class DriverApi {
     );
     return (res['data'] as Map)['is_online'] == true;
   }
+
+  Future<DriverModel> fetchProfile() async {
+    final res = await _api.get('/driver/profile');
+    final data = res['data'] as Map<String, dynamic>;
+    return DriverModel.fromJson(data['driver'] as Map<String, dynamic>);
+  }
+
+  Future<DriverModel> updateProfile({
+    required String name,
+    String? licenseNumber,
+    String? password,
+    String? passwordConfirmation,
+  }) async {
+    final body = <String, dynamic>{
+      'name': name,
+      'license_number': licenseNumber ?? '',
+    };
+    if (password != null && password.isNotEmpty) {
+      body['password'] = password;
+      body['password_confirmation'] = passwordConfirmation ?? password;
+    }
+    final res = await _api.put('/driver/profile', body: body);
+    final data = res['data'] as Map<String, dynamic>;
+    return DriverModel.fromJson(data['driver'] as Map<String, dynamic>);
+  }
+
+  Future<void> logout() async {
+    try {
+      await _api.post('/driver/logout');
+    } catch (_) {
+      // Still clear local session if network fails.
+    }
+  }
+
+  Future<void> deleteAccount() async {
+    await _api.delete('/driver/account');
+  }
 }

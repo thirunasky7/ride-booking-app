@@ -9,6 +9,7 @@ use App\Models\DriverEarning;
 use App\Services\DriverService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use RuntimeException;
 
@@ -113,5 +114,57 @@ class DriverApiController extends Controller
         $driver->update(['is_online' => $request->boolean('is_online')]);
 
         return $this->success(['is_online' => $driver->is_online], 'Status updated.');
+    }
+
+    public function profile(Request $request)
+    {
+        return $this->success(['driver' => $request->user()]);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        /** @var Driver $driver */
+        $driver = $request->user();
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'license_number' => 'nullable|string|max:255',
+            'password' => 'nullable|string|min:6|confirmed',
+        ]);
+
+        $data = [
+            'name' => $validated['name'],
+            'license_number' => $validated['license_number'] ?? $driver->license_number,
+        ];
+
+        if (!empty($validated['password'])) {
+            $data['password'] = Hash::make($validated['password']);
+        }
+
+        $driver->update($data);
+
+        return $this->success(['driver' => $driver->fresh()], 'Profile updated.');
+    }
+
+    public function logout(Request $request)
+    {
+        $request->user()->currentAccessToken()?->delete();
+
+        return $this->success(null, 'Logged out successfully.');
+    }
+
+    /** Play Store account deletion requirement for driver app */
+    public function deleteAccount(Request $request)
+    {
+        /** @var Driver $driver */
+        $driver = $request->user();
+
+        DB::transaction(function () use ($driver) {
+            $driver->update(['is_online' => false]);
+            $driver->tokens()->delete();
+            $driver->delete();
+        });
+
+        return $this->success(null, 'Driver account deleted successfully.');
     }
 }
