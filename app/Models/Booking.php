@@ -20,6 +20,8 @@ class Booking extends Model
         'payment_status',
         'payment_method',
         'paid_at',
+        'razorpay_order_id',
+        'razorpay_payment_id',
         'price',
         'commission_amount',
         'driver_amount',

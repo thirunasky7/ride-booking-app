@@ -37,6 +37,11 @@
         <td>
             @php $colors = ['confirmed'=>'success','pending'=>'warning','started'=>'info','completed'=>'secondary','cancelled'=>'danger']; @endphp
             <span class="badge bg-{{ $colors[$booking->status] ?? 'secondary' }}">{{ ucfirst($booking->status) }}</span>
+            @if($booking->payment_status === 'paid')
+                <span class="badge bg-success-subtle text-success border border-success-subtle ms-1">Paid</span>
+            @elseif($booking->payment_status === 'pending')
+                <span class="badge bg-warning-subtle text-warning border ms-1">Payment pending</span>
+            @endif
         </td>
         <td>
             @if(in_array($booking->status, ['confirmed', 'pending']))

@@ -3,13 +3,15 @@
 namespace App\Services;
 
 use App\Models\RoutePrice;
-use App\Models\Setting;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use RuntimeException;
 
 class PricingService
 {
+    public function __construct(
+        protected SettingsService $settingsService,
+    ) {}
     public function calculate(
         int $apartmentId,
         int $busStandId,
@@ -87,16 +89,8 @@ class PricingService
         return $date->isWeekend();
     }
 
-    protected function getSettings(): Setting
+    protected function getSettings()
     {
-        return Cache::remember('app_settings', now()->addHour(), function () {
-            return Setting::firstOrCreate([], [
-                'slot_gap_minutes' => 30,
-                'booking_open_time' => '06:00:00',
-                'booking_close_time' => '22:00:00',
-                'commission_percent' => 10,
-                'custom_route_price' => 150,
-            ]);
-        });
+        return $this->settingsService->get();
     }
 }

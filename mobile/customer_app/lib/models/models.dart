@@ -152,6 +152,8 @@ class BookingModel {
 
   bool get isPaid => paymentStatus == 'paid';
 
+  bool get needsPayment => paymentStatus == 'pending' || paymentStatus == 'unpaid';
+
   String get pickupLabel =>
       (pickupAddress != null && pickupAddress!.isNotEmpty)
           ? pickupAddress!

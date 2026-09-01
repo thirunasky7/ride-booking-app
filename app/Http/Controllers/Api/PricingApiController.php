@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\TimeSlot;
 use App\Services\BookingService;
+use App\Services\LocationResolver;
 use App\Services\PricingService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
@@ -16,11 +18,14 @@ class PricingApiController extends Controller
     public function __construct(
         protected PricingService $pricingService,
         protected BookingService $bookingService,
+        protected LocationResolver $locationResolver,
     ) {}
 
     public function calculatePrice(Request $request)
     {
         $request->validate([
+            'pickup_location' => 'nullable|string',
+            'drop_location' => 'nullable|string',
             'trip_type' => 'nullable|in:apartment_to_busstand,busstand_to_apartment,others',
             'apartment_id' => 'nullable',
             'bus_stand_id' => 'nullable',
@@ -37,14 +42,24 @@ class PricingApiController extends Controller
 
         try {
             $payload = $request->only([
+                'pickup_location', 'drop_location',
                 'trip_type', 'apartment_id', 'bus_stand_id',
                 'pickup_address', 'drop_address',
                 'pickup_lat', 'pickup_lng', 'drop_lat', 'drop_lng',
                 'time_slot_id', 'slot_time',
             ]);
 
-            if (($payload['apartment_id'] ?? '') === 'other') {
+            if (!empty($payload['pickup_location']) && !empty($payload['drop_location'])) {
+                $payload = $this->locationResolver->resolveBookingLocations($payload);
+            } elseif (($payload['apartment_id'] ?? '') === 'other') {
                 $payload['apartment_id'] = null;
+            }
+
+            if (!empty($payload['time_slot_id']) && empty($payload['slot_time'])) {
+                $slot = TimeSlot::find($payload['time_slot_id']);
+                if ($slot) {
+                    $payload['slot_time'] = $slot->slot_time;
+                }
             }
 
             if (($payload['bus_stand_id'] ?? '') === 'other') {
@@ -56,8 +71,7 @@ class PricingApiController extends Controller
                 || empty($payload['bus_stand_id']);
 
             if ($isCustomRoute) {
-                $data = $this->bookingService->resolveLocations($payload);
-                $slotTime = $data['slot_time'] ?? $request->slot_time;
+                $slotTime = $payload['slot_time'] ?? $request->slot_time;
                 $pricing = $this->pricingService->calculateCustom($slotTime, $request->booking_date);
 
                 return $this->success([
@@ -65,18 +79,17 @@ class PricingApiController extends Controller
                     'booking_type' => $this->bookingService->resolveBookingType($request->booking_date),
                     'breakdown' => $pricing,
                     'route' => [
-                        'pickup_address' => $data['pickup_address'],
-                        'drop_address' => $data['drop_address'],
+                        'pickup_address' => $payload['pickup_address'] ?? null,
+                        'drop_address' => $payload['drop_address'] ?? null,
                     ],
                 ]);
             }
 
-            $data = $this->bookingService->resolveLocations($payload);
-            $slotTime = $data['slot_time'] ?? $request->slot_time;
+            $slotTime = $payload['slot_time'] ?? $request->slot_time;
 
             $pricing = $this->pricingService->calculate(
-                (int) $data['apartment_id'],
-                (int) $data['bus_stand_id'],
+                (int) $payload['apartment_id'],
+                (int) $payload['bus_stand_id'],
                 $slotTime,
                 $request->booking_date
             );
@@ -86,8 +99,8 @@ class PricingApiController extends Controller
                 'booking_type' => $this->bookingService->resolveBookingType($request->booking_date),
                 'breakdown' => $pricing,
                 'route' => [
-                    'apartment_id' => $data['apartment_id'],
-                    'bus_stand_id' => $data['bus_stand_id'],
+                    'apartment_id' => $payload['apartment_id'],
+                    'bus_stand_id' => $payload['bus_stand_id'],
                 ],
             ]);
         } catch (RuntimeException $e) {

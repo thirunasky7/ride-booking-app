@@ -4,8 +4,14 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BookingRequest;
+use App\Http\Requests\SubscriptionEnquiryRequest;
 use App\Models\Booking;
+use App\Models\Subscription;
+use App\Models\SubscriptionEnquiry;
 use App\Services\BookingService;
+use App\Services\PaymentService;
+use App\Services\SettingsService;
+use App\Services\SubscriptionService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use RuntimeException;
@@ -14,7 +20,11 @@ class BookingApiController extends Controller
 {
     use ApiResponse;
 
-    public function __construct(protected BookingService $bookingService) {}
+    public function __construct(
+        protected BookingService $bookingService,
+        protected PaymentService $paymentService,
+        protected SettingsService $settingsService,
+    ) {}
 
     public function createBooking(BookingRequest $request)
     {
@@ -24,7 +34,19 @@ class BookingApiController extends Controller
                 $request->validated()
             );
 
-            return $this->success(['booking' => $booking], 'Booking created successfully.');
+            $data = ['booking' => $booking];
+
+            if ($this->settingsService->isRazorpayEnabled()) {
+                $data['payment'] = $this->paymentService->createOrder($booking);
+            } else {
+                $this->bookingService->finalizeAfterPayment(
+                    $this->paymentService->markPaidWithoutGateway($booking),
+                    $request->user()
+                );
+                $data['booking'] = $booking->fresh(['vehicle', 'apartment', 'busStand']);
+            }
+
+            return $this->success($data, 'Booking created successfully.');
         } catch (RuntimeException $e) {
             return $this->error($e->getMessage(), 422);
         }

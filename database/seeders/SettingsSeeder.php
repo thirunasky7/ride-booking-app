@@ -15,6 +15,8 @@ class SettingsSeeder extends Seeder
             'booking_close_time' => '22:00:00',
             'commission_percent' => 10,
             'custom_route_price' => 150,
+            'razorpay_enabled' => false,
+            'site_name' => 'Apartment Shuttle',
         ]);
     }
 }

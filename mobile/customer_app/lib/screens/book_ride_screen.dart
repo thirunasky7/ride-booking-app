@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../models/models.dart';
 import '../services/api_client.dart';
 import '../services/customer_api.dart';
+import '../services/razorpay_checkout.dart';
 import '../theme/app_theme.dart';
 
 class BookRideScreen extends StatefulWidget {
@@ -20,22 +21,23 @@ class _BookRideScreenState extends State<BookRideScreen> {
   List<BusStandModel> busStands = [];
   List<SlotModel> slots = [];
 
-  String tripType = 'apartment_to_busstand';
-  int? apartmentId;
-  int? busStandId;
-  bool otherApartment = false;
-  bool otherBusStand = false;
+  String? pickupLocation;
+  String? dropLocation;
   DateTime bookingDate = DateTime.now();
   SlotModel? selectedSlot;
   double? estimatedFare;
   String? fareType;
   bool loadingMeta = true;
   bool submitting = false;
+  PaymentConfig? paymentConfig;
 
   final pickupCtrl = TextEditingController();
   final dropCtrl = TextEditingController();
+  late final RazorpayCheckout _checkout = RazorpayCheckout(widget.api);
 
-  bool get isOthers => tripType == 'others';
+  bool get isOtherPickup => pickupLocation == 'other';
+  bool get isOtherDrop => dropLocation == 'other';
+  bool get usesCustomFields => isOtherPickup || isOtherDrop;
 
   @override
   void initState() {
@@ -47,17 +49,22 @@ class _BookRideScreenState extends State<BookRideScreen> {
   void dispose() {
     pickupCtrl.dispose();
     dropCtrl.dispose();
+    _checkout.dispose();
     super.dispose();
   }
 
   Future<void> _bootstrap() async {
     try {
-      final a = await widget.api.apartments();
-      final b = await widget.api.busStands();
+      final results = await Future.wait([
+        widget.api.apartments(),
+        widget.api.busStands(),
+        widget.api.paymentConfig(),
+      ]);
       if (!mounted) return;
       setState(() {
-        apartments = a;
-        busStands = b;
+        apartments = results[0] as List<ApartmentModel>;
+        busStands = results[1] as List<BusStandModel>;
+        paymentConfig = results[2] as PaymentConfig;
         loadingMeta = false;
       });
       await _loadSlots();
@@ -84,41 +91,39 @@ class _BookRideScreenState extends State<BookRideScreen> {
     }
   }
 
-  Future<void> _fetchPrice() async {
-    if (selectedSlot == null) return;
+  Map<String, String> _priceQuery() {
     final query = <String, String>{
       'booking_date': DateFormat('yyyy-MM-dd').format(bookingDate),
       'slot_time': selectedSlot!.slotTime,
       'time_slot_id': '${selectedSlot!.timeSlotId}',
-      'trip_type': tripType,
+      'pickup_location': pickupLocation!,
+      'drop_location': dropLocation!,
     };
+    if (isOtherPickup) query['pickup_address'] = pickupCtrl.text.trim();
+    if (isOtherDrop) query['drop_address'] = dropCtrl.text.trim();
+    return query;
+  }
 
-    if (isOthers) {
-      if (pickupCtrl.text.trim().isEmpty || dropCtrl.text.trim().isEmpty) return;
-      query['pickup_address'] = pickupCtrl.text.trim();
-      query['drop_address'] = dropCtrl.text.trim();
-    } else {
-      if (otherApartment) {
-        if (pickupCtrl.text.trim().isEmpty) return;
-        query['pickup_address'] = pickupCtrl.text.trim();
-      } else if (apartmentId != null) {
-        query['apartment_id'] = '$apartmentId';
-      } else {
-        return;
-      }
+  Map<String, dynamic> _bookingBody() {
+    final body = <String, dynamic>{
+      'pickup_location': pickupLocation,
+      'drop_location': dropLocation,
+      'booking_date': DateFormat('yyyy-MM-dd').format(bookingDate),
+      'slot_time': selectedSlot!.slotTime,
+      'time_slot_id': selectedSlot!.timeSlotId,
+    };
+    if (isOtherPickup) body['pickup_address'] = pickupCtrl.text.trim();
+    if (isOtherDrop) body['drop_address'] = dropCtrl.text.trim();
+    return body;
+  }
 
-      if (otherBusStand) {
-        if (dropCtrl.text.trim().isEmpty) return;
-        query['drop_address'] = dropCtrl.text.trim();
-      } else if (busStandId != null) {
-        query['bus_stand_id'] = '$busStandId';
-      } else {
-        return;
-      }
-    }
+  Future<void> _fetchPrice() async {
+    if (selectedSlot == null || pickupLocation == null || dropLocation == null) return;
+    if (isOtherPickup && pickupCtrl.text.trim().isEmpty) return;
+    if (isOtherDrop && dropCtrl.text.trim().isEmpty) return;
 
     try {
-      final data = await widget.api.calculatePrice(query);
+      final data = await widget.api.calculatePrice(_priceQuery());
       if (!mounted) return;
       setState(() {
         estimatedFare = parseDouble(data['estimated_fare']);
@@ -127,65 +132,59 @@ class _BookRideScreenState extends State<BookRideScreen> {
     } catch (_) {}
   }
 
-  Future<void> _submit() async {
+  bool _validate() {
+    if (pickupLocation == null) {
+      _toast('Select pickup location');
+      return false;
+    }
+    if (dropLocation == null) {
+      _toast('Select drop location');
+      return false;
+    }
+    if (pickupLocation == dropLocation && pickupLocation != 'other') {
+      _toast('Pickup and drop cannot be the same');
+      return false;
+    }
     if (selectedSlot == null) {
       _toast('Select a time slot');
-      return;
+      return false;
     }
-
-    final body = <String, dynamic>{
-      'trip_type': tripType,
-      'booking_date': DateFormat('yyyy-MM-dd').format(bookingDate),
-      'slot_time': selectedSlot!.slotTime,
-      'time_slot_id': selectedSlot!.timeSlotId,
-    };
-
-    if (isOthers) {
-      if (pickupCtrl.text.trim().isEmpty || dropCtrl.text.trim().isEmpty) {
-        _toast('Enter pickup and drop addresses');
-        return;
-      }
-      body['pickup_address'] = pickupCtrl.text.trim();
-      body['drop_address'] = dropCtrl.text.trim();
-    } else {
-      if (otherApartment) {
-        if (pickupCtrl.text.trim().isEmpty) {
-          _toast('Enter pickup address');
-          return;
-        }
-        body['pickup_address'] = pickupCtrl.text.trim();
-      } else {
-        if (apartmentId == null) {
-          _toast('Select an apartment');
-          return;
-        }
-        body['apartment_id'] = apartmentId;
-      }
-      if (otherBusStand) {
-        if (dropCtrl.text.trim().isEmpty) {
-          _toast('Enter drop address');
-          return;
-        }
-        body['drop_address'] = dropCtrl.text.trim();
-      } else {
-        if (busStandId == null) {
-          _toast('Select a bus stand');
-          return;
-        }
-        body['bus_stand_id'] = busStandId;
-      }
+    if (isOtherPickup && pickupCtrl.text.trim().isEmpty) {
+      _toast('Enter pickup address');
+      return false;
     }
+    if (isOtherDrop && dropCtrl.text.trim().isEmpty) {
+      _toast('Enter drop address');
+      return false;
+    }
+    return true;
+  }
+
+  Future<void> _submit() async {
+    if (!_validate()) return;
 
     setState(() => submitting = true);
     try {
-      await widget.api.createBooking(body);
+      final result = await widget.api.createBooking(_bookingBody());
       if (!mounted) return;
-      _toast('Booking created successfully');
-      setState(() {
-        pickupCtrl.clear();
-        dropCtrl.clear();
-        estimatedFare = null;
-      });
+
+      if (result.payment != null) {
+        await _checkout.pay(
+          order: result.payment!,
+          onSuccess: () {
+            if (!mounted) return;
+            _toast('Payment successful! Booking confirmed.');
+            _resetForm();
+          },
+          onError: (msg) {
+            if (!mounted) return;
+            _toast(msg);
+          },
+        );
+      } else {
+        _toast('Booking confirmed successfully');
+        _resetForm();
+      }
     } on ApiException catch (e) {
       if (!mounted) return;
       _toast(e.message);
@@ -195,6 +194,30 @@ class _BookRideScreenState extends State<BookRideScreen> {
     } finally {
       if (mounted) setState(() => submitting = false);
     }
+  }
+
+  void _resetForm() {
+    setState(() {
+      pickupLocation = null;
+      dropLocation = null;
+      pickupCtrl.clear();
+      dropCtrl.clear();
+      estimatedFare = null;
+    });
+  }
+
+  void _swapLocations() {
+    setState(() {
+      final tmp = pickupLocation;
+      pickupLocation = dropLocation;
+      dropLocation = tmp;
+      if (usesCustomFields) {
+        final tmpText = pickupCtrl.text;
+        pickupCtrl.text = dropCtrl.text;
+        dropCtrl.text = tmpText;
+      }
+    });
+    _fetchPrice();
   }
 
   void _toast(String msg) {
@@ -214,6 +237,28 @@ class _BookRideScreenState extends State<BookRideScreen> {
     }
   }
 
+  String _labelFor(String? value) {
+    if (value == null) return 'Select location';
+    if (value == 'other') return 'Custom address';
+    if (value.startsWith('apartment:')) {
+      final id = int.tryParse(value.split(':').last);
+      return apartments.firstWhere((a) => a.id == id, orElse: () => ApartmentModel(id: 0, name: 'Apartment')).name;
+    }
+    if (value.startsWith('busstand:')) {
+      final id = int.tryParse(value.split(':').last);
+      return busStands.firstWhere((b) => b.id == id, orElse: () => BusStandModel(id: 0, name: 'Bus stand')).name;
+    }
+    return value;
+  }
+
+  List<DropdownMenuItem<String>> _locationItems() {
+    return [
+      ...apartments.map((a) => DropdownMenuItem(value: 'apartment:${a.id}', child: Text('🏢 ${a.name}'))),
+      ...busStands.map((b) => DropdownMenuItem(value: 'busstand:${b.id}', child: Text('🚏 ${b.name}'))),
+      const DropdownMenuItem(value: 'other', child: Text('📍 Custom address')),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -227,116 +272,69 @@ class _BookRideScreenState extends State<BookRideScreen> {
           : ListView(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
               children: [
-                _sectionTitle('Trip type'),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _TripChip(
-                      label: 'Apt → Bus',
-                      selected: tripType == 'apartment_to_busstand',
-                      onTap: () {
-                        setState(() => tripType = 'apartment_to_busstand');
-                        _fetchPrice();
-                      },
-                    ),
-                    _TripChip(
-                      label: 'Bus → Apt',
-                      selected: tripType == 'busstand_to_apartment',
-                      onTap: () {
-                        setState(() => tripType = 'busstand_to_apartment');
-                        _fetchPrice();
-                      },
-                    ),
-                    _TripChip(
-                      label: 'Others',
-                      selected: tripType == 'others',
-                      onTap: () {
-                        setState(() {
-                          tripType = 'others';
-                          otherApartment = false;
-                          otherBusStand = false;
-                        });
-                        _fetchPrice();
-                      },
-                    ),
-                  ],
+                const Text('Where are you going?', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+                const SizedBox(height: 6),
+                const Text('Select pickup and drop from the list below', style: TextStyle(color: AppTheme.muted)),
+                const SizedBox(height: 16),
+                _whiteCard(
+                  child: Column(
+                    children: [
+                      _LocationDropdown(
+                        label: 'Pickup',
+                        dotColor: AppTheme.success,
+                        value: pickupLocation,
+                        items: _locationItems(),
+                        onChanged: (v) {
+                          setState(() => pickupLocation = v);
+                          _fetchPrice();
+                        },
+                      ),
+                      Row(
+                        children: [
+                          const Expanded(child: Divider()),
+                          IconButton(
+                            onPressed: _swapLocations,
+                            icon: const Icon(Icons.swap_vert_rounded),
+                            tooltip: 'Swap',
+                          ),
+                          const Expanded(child: Divider()),
+                        ],
+                      ),
+                      _LocationDropdown(
+                        label: 'Drop',
+                        dotColor: AppTheme.black,
+                        value: dropLocation,
+                        items: _locationItems(),
+                        onChanged: (v) {
+                          setState(() => dropLocation = v);
+                          _fetchPrice();
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 20),
-                _sectionTitle('Route'),
-                const SizedBox(height: 10),
-                if (!isOthers) ...[
+                if (usesCustomFields) ...[
+                  const SizedBox(height: 12),
                   _whiteCard(
                     child: Column(
                       children: [
-                        DropdownButtonFormField<int?>(
-                          key: ValueKey('apt-${otherApartment ? -1 : apartmentId}'),
-                          initialValue: otherApartment ? -1 : apartmentId,
-                          decoration: const InputDecoration(
-                            labelText: 'Pickup · Apartment',
-                            border: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                          ),
-                          items: [
-                            ...apartments.map((a) => DropdownMenuItem(value: a.id, child: Text(a.name))),
-                            const DropdownMenuItem(value: -1, child: Text('Other address')),
-                          ],
-                          onChanged: (v) {
-                            setState(() {
-                              if (v == -1) {
-                                otherApartment = true;
-                                apartmentId = null;
-                              } else {
-                                otherApartment = false;
-                                apartmentId = v;
-                              }
-                            });
-                            _fetchPrice();
-                          },
-                        ),
-                        if (otherApartment)
+                        if (isOtherPickup)
                           TextField(
                             controller: pickupCtrl,
+                            maxLines: 2,
                             decoration: const InputDecoration(
-                              hintText: 'Enter pickup address',
+                              labelText: 'Pickup address',
                               border: InputBorder.none,
                             ),
                             onChanged: (_) => _fetchPrice(),
                           ),
-                        const Divider(height: 1),
-                        DropdownButtonFormField<int?>(
-                          key: ValueKey('bus-${otherBusStand ? -1 : busStandId}'),
-                          initialValue: otherBusStand ? -1 : busStandId,
-                          decoration: const InputDecoration(
-                            labelText: 'Drop · Bus stand',
-                            border: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                          ),
-                          items: [
-                            ...busStands.map((b) => DropdownMenuItem(value: b.id, child: Text(b.name))),
-                            const DropdownMenuItem(value: -1, child: Text('Other address')),
-                          ],
-                          onChanged: (v) {
-                            setState(() {
-                              if (v == -1) {
-                                otherBusStand = true;
-                                busStandId = null;
-                              } else {
-                                otherBusStand = false;
-                                busStandId = v;
-                              }
-                            });
-                            _fetchPrice();
-                          },
-                        ),
-                        if (otherBusStand)
+                        if (isOtherPickup && isOtherDrop) const Divider(height: 1),
+                        if (isOtherDrop)
                           TextField(
                             controller: dropCtrl,
+                            maxLines: 2,
                             decoration: const InputDecoration(
-                              hintText: 'Enter drop address',
+                              labelText: 'Drop address',
                               border: InputBorder.none,
                             ),
                             onChanged: (_) => _fetchPrice(),
@@ -344,35 +342,31 @@ class _BookRideScreenState extends State<BookRideScreen> {
                       ],
                     ),
                   ),
-                ] else ...[
-                  _whiteCard(
-                    child: Column(
+                ],
+                if (pickupLocation != null && dropLocation != null) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppTheme.yellow.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Row(
                       children: [
-                        TextField(
-                          controller: pickupCtrl,
-                          maxLines: 2,
-                          decoration: const InputDecoration(
-                            labelText: 'Pickup address',
-                            border: InputBorder.none,
+                        const Icon(Icons.route_rounded, size: 20),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            '${_labelFor(pickupLocation)} → ${_labelFor(dropLocation)}',
+                            style: const TextStyle(fontWeight: FontWeight.w700),
                           ),
-                          onChanged: (_) => _fetchPrice(),
-                        ),
-                        const Divider(height: 1),
-                        TextField(
-                          controller: dropCtrl,
-                          maxLines: 2,
-                          decoration: const InputDecoration(
-                            labelText: 'Drop address',
-                            border: InputBorder.none,
-                          ),
-                          onChanged: (_) => _fetchPrice(),
                         ),
                       ],
                     ),
                   ),
                 ],
                 const SizedBox(height: 20),
-                _sectionTitle('When'),
+                const Text('When', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 10),
                 _whiteCard(
                   child: Column(
@@ -406,8 +400,6 @@ class _BookRideScreenState extends State<BookRideScreen> {
                         decoration: const InputDecoration(
                           labelText: 'Time slot',
                           border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
                         ),
                         items: slots
                             .map((s) => DropdownMenuItem(value: s, child: Text(_formatSlot(s.slotTime))))
@@ -420,6 +412,26 @@ class _BookRideScreenState extends State<BookRideScreen> {
                     ],
                   ),
                 ),
+                if (paymentConfig?.razorpayEnabled == true) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.shield_outlined, color: AppTheme.success, size: 18),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text('Secure payment via Razorpay', style: TextStyle(fontSize: 13, color: AppTheme.muted)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
       bottomSheet: estimatedFare == null && !submitting
@@ -456,7 +468,7 @@ class _BookRideScreenState extends State<BookRideScreen> {
                       ),
                     ),
                     SizedBox(
-                      width: 160,
+                      width: 170,
                       child: FilledButton(
                         onPressed: submitting ? null : _submit,
                         child: submitting
@@ -465,7 +477,7 @@ class _BookRideScreenState extends State<BookRideScreen> {
                                 width: 22,
                                 child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.black),
                               )
-                            : const Text('Confirm'),
+                            : Text(paymentConfig?.razorpayEnabled == true ? 'Pay & Book' : 'Confirm'),
                       ),
                     ),
                   ],
@@ -474,11 +486,6 @@ class _BookRideScreenState extends State<BookRideScreen> {
             ),
     );
   }
-
-  Widget _sectionTitle(String text) => Text(
-        text,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-      );
 
   Widget _whiteCard({required Widget child}) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -491,33 +498,44 @@ class _BookRideScreenState extends State<BookRideScreen> {
       );
 }
 
-class _TripChip extends StatelessWidget {
-  const _TripChip({required this.label, required this.selected, required this.onTap});
+class _LocationDropdown extends StatelessWidget {
+  const _LocationDropdown({
+    required this.label,
+    required this.dotColor,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+  });
 
   final String label;
-  final bool selected;
-  final VoidCallback onTap;
+  final Color dotColor;
+  final String? value;
+  final List<DropdownMenuItem<String>> items;
+  final ValueChanged<String?> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(24),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: selected ? AppTheme.yellow : Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: selected ? AppTheme.yellowDark : Colors.grey.shade300),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            color: AppTheme.black,
+    return DropdownButtonFormField<String>(
+      key: ValueKey('$label-$value'),
+      initialValue: value,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Padding(
+          padding: const EdgeInsets.only(left: 12, right: 8),
+          child: Container(
+            width: 10,
+            height: 10,
+            margin: const EdgeInsets.symmetric(vertical: 14),
+            decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
           ),
         ),
+        prefixIconConstraints: const BoxConstraints(minWidth: 30),
+        border: InputBorder.none,
       ),
+      hint: const Text('Select location'),
+      isExpanded: true,
+      items: items,
+      onChanged: onChanged,
     );
   }
 }

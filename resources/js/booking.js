@@ -2,24 +2,16 @@ const cfg = window.bookingConfig || {};
 
 let priceTimer;
 
-function isOthersTrip() {
-    return document.getElementById('trip_type')?.value === 'others';
+function isOtherPickup() {
+    return document.getElementById('pickup_location')?.value === 'other';
 }
 
-function isOtherApartment() {
-    return document.getElementById('apartment_id')?.value === 'other';
-}
-
-function isOtherBusStand() {
-    return document.getElementById('bus_stand_id')?.value === 'other';
+function isOtherDrop() {
+    return document.getElementById('drop_location')?.value === 'other';
 }
 
 function usesCustomAddresses() {
-    return isOthersTrip();
-}
-
-function usesCustomPricing() {
-    return isOthersTrip() || isOtherApartment() || isOtherBusStand();
+    return isOtherPickup() || isOtherDrop();
 }
 
 function triggerPriceUpdate() {
@@ -33,124 +25,57 @@ function showStep(n) {
     document.querySelectorAll('.step-item').forEach(s => {
         s.classList.toggle('active', s.dataset.step === n);
     });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function selectedText(selectId) {
     const select = document.getElementById(selectId);
-    if (!select || !select.value || select.value === 'other') return '—';
-    return select.options[select.selectedIndex]?.text || '—';
+    if (!select || !select.value) return '—';
+    if (select.value === 'other') return 'Custom address';
+    return select.options[select.selectedIndex]?.text?.trim() || '—';
 }
 
-function activePickupInput() {
-    if (isOthersTrip()) return document.getElementById('pickup_address_custom');
-    if (isOtherApartment()) return document.getElementById('pickup_address_standard');
-    return null;
+function syncCustomFields() {
+    const show = usesCustomAddresses();
+    const wrap = document.getElementById('customAddressFields');
+    wrap?.classList.toggle('d-none', !show);
+
+    const pickup = document.getElementById('pickup_address');
+    const drop = document.getElementById('drop_address');
+    if (pickup) pickup.required = isOtherPickup();
+    if (drop) drop.required = isOtherDrop();
 }
 
-function activeDropInput() {
-    if (isOthersTrip()) return document.getElementById('drop_address_custom');
-    if (isOtherBusStand()) return document.getElementById('drop_address_standard');
-    return null;
-}
+function syncSlotTime() {
+    const slotSelect = document.getElementById('time_slot_id');
+    const slotHidden = document.getElementById('slot_time');
+    if (!slotSelect || !slotHidden) return;
 
-function syncFieldState() {
-    const others = isOthersTrip();
-    const standardRoute = document.getElementById('standardRouteFields');
-    const customFields = document.getElementById('customAddressFields');
-    const otherApartmentWrap = document.getElementById('otherApartmentWrap');
-    const otherBusStandWrap = document.getElementById('otherBusStandWrap');
-
-    standardRoute?.classList.toggle('d-none', others);
-    customFields?.classList.toggle('d-none', !others);
-
-    otherApartmentWrap?.classList.toggle('d-none', others || !isOtherApartment());
-    otherBusStandWrap?.classList.toggle('d-none', others || !isOtherBusStand());
-
-    const apartmentSelect = document.getElementById('apartment_id');
-    const busStandSelect = document.getElementById('bus_stand_id');
-
-    if (apartmentSelect) {
-        apartmentSelect.required = !others;
-        apartmentSelect.disabled = others;
-    }
-
-    if (busStandSelect) {
-        busStandSelect.required = !others;
-        busStandSelect.disabled = others;
-    }
-
-    const pickupStandard = document.getElementById('pickup_address_standard');
-    const dropStandard = document.getElementById('drop_address_standard');
-    const pickupCustom = document.getElementById('pickup_address_custom');
-    const dropCustom = document.getElementById('drop_address_custom');
-
-    if (pickupStandard) {
-        pickupStandard.required = !others && isOtherApartment();
-        pickupStandard.disabled = others || !isOtherApartment();
-    }
-
-    if (dropStandard) {
-        dropStandard.required = !others && isOtherBusStand();
-        dropStandard.disabled = others || !isOtherBusStand();
-    }
-
-    if (pickupCustom) {
-        pickupCustom.required = others;
-        pickupCustom.disabled = !others;
-    }
-
-    if (dropCustom) {
-        dropCustom.required = others;
-        dropCustom.disabled = !others;
+    const opt = slotSelect.options[slotSelect.selectedIndex];
+    if (opt?.dataset?.slotTime) {
+        slotHidden.value = opt.dataset.slotTime;
     }
 }
 
 function validateStep1() {
+    syncSlotTime();
+
+    const pickup = document.getElementById('pickup_location')?.value;
+    const drop = document.getElementById('drop_location')?.value;
     const date = document.getElementById('booking_date')?.value;
     const slot = document.getElementById('time_slot_id')?.value;
 
-    if (!date || !slot) {
-        alert('Please select a booking date and time slot.');
+    if (!pickup) { alert('Please select a pickup location.'); return false; }
+    if (!drop) { alert('Please select a drop location.'); return false; }
+    if (pickup === drop && pickup !== 'other') { alert('Pickup and drop cannot be the same.'); return false; }
+    if (!date || !slot) { alert('Please select date and time slot.'); return false; }
+
+    if (isOtherPickup() && !document.getElementById('pickup_address')?.value.trim()) {
+        alert('Please enter pickup address.');
         return false;
     }
-
-    if (isOthersTrip()) {
-        const pickup = document.getElementById('pickup_address_custom')?.value.trim();
-        const drop = document.getElementById('drop_address_custom')?.value.trim();
-        if (!pickup || !drop) {
-            alert('Please enter both pickup and drop addresses.');
-            return false;
-        }
-        return true;
-    }
-
-    const apartment = document.getElementById('apartment_id')?.value;
-    const busStand = document.getElementById('bus_stand_id')?.value;
-
-    if (!apartment && !busStand) {
-        alert('Please select apartment and bus stand, or choose Other to enter addresses.');
-        return false;
-    }
-
-    if (apartment === 'other') {
-        const pickup = document.getElementById('pickup_address_standard')?.value.trim();
-        if (!pickup) {
-            alert('Please enter a pickup address.');
-            return false;
-        }
-    } else if (!apartment) {
-        alert('Please select an apartment.');
-        return false;
-    }
-
-    if (busStand === 'other') {
-        const drop = document.getElementById('drop_address_standard')?.value.trim();
-        if (!drop) {
-            alert('Please enter a drop address.');
-            return false;
-        }
-    } else if (!busStand) {
-        alert('Please select a bus stand.');
+    if (isOtherDrop() && !document.getElementById('drop_address')?.value.trim()) {
+        alert('Please enter drop address.');
         return false;
     }
 
@@ -158,26 +83,12 @@ function validateStep1() {
 }
 
 function updateSummary() {
-    const pickupLabel = document.getElementById('sumPickupLabel');
-    const dropLabel = document.getElementById('sumDropLabel');
-
-    if (isOthersTrip()) {
-        pickupLabel.textContent = 'Pickup';
-        dropLabel.textContent = 'Drop';
-        document.getElementById('sumPickup').textContent = document.getElementById('pickup_address_custom')?.value.trim() || '—';
-        document.getElementById('sumDrop').textContent = document.getElementById('drop_address_custom')?.value.trim() || '—';
-    } else {
-        pickupLabel.textContent = isOtherApartment() ? 'Pickup' : 'Apartment';
-        dropLabel.textContent = isOtherBusStand() ? 'Drop' : 'Bus Stand';
-        document.getElementById('sumPickup').textContent = isOtherApartment()
-            ? (document.getElementById('pickup_address_standard')?.value.trim() || '—')
-            : selectedText('apartment_id');
-        document.getElementById('sumDrop').textContent = isOtherBusStand()
-            ? (document.getElementById('drop_address_standard')?.value.trim() || '—')
-            : selectedText('bus_stand_id');
-    }
-
-    document.getElementById('sumTrip').textContent = selectedText('trip_type');
+    document.getElementById('sumPickup').textContent = isOtherPickup()
+        ? (document.getElementById('pickup_address')?.value.trim() || 'Custom address')
+        : selectedText('pickup_location');
+    document.getElementById('sumDrop').textContent = isOtherDrop()
+        ? (document.getElementById('drop_address')?.value.trim() || 'Custom address')
+        : selectedText('drop_location');
     document.getElementById('sumDate').textContent = document.getElementById('booking_date')?.value || '—';
     const slot = document.getElementById('time_slot_id');
     document.getElementById('sumTime').textContent = slot?.options[slot.selectedIndex]?.text || '—';
@@ -204,6 +115,7 @@ async function loadSlots() {
         });
         const json = await res.json();
         const slots = json.data?.slots || json.slots || [];
+        const current = slotSelect.value;
         slotSelect.innerHTML = '';
         slots.forEach(s => {
             const opt = document.createElement('option');
@@ -213,8 +125,10 @@ async function loadSlots() {
             opt.disabled = !s.is_available;
             slotSelect.appendChild(opt);
         });
+        if (current) slotSelect.value = current;
         if (slotSelect.options.length && slotHidden) {
-            slotHidden.value = slotSelect.options[0].dataset.slotTime;
+            const opt = slotSelect.options[slotSelect.selectedIndex];
+            slotHidden.value = opt?.dataset?.slotTime || '';
         }
     } catch (e) {
         console.error(e);
@@ -227,48 +141,24 @@ async function fetchPrice() {
     const preview = document.getElementById('farePreview');
     const loading = document.getElementById('fareLoading');
     const icon = document.getElementById('fareIcon');
+    const pickup = document.getElementById('pickup_location')?.value;
+    const drop = document.getElementById('drop_location')?.value;
     const date = document.getElementById('booking_date')?.value;
     const slotTime = document.getElementById('slot_time')?.value;
-    const tripType = document.getElementById('trip_type')?.value;
 
-    if (!date || !slotTime) return;
+    if (!pickup || !drop || !date || !slotTime) return;
 
     const params = new URLSearchParams({
+        pickup_location: pickup,
+        drop_location: drop,
         booking_date: date,
         slot_time: slotTime,
-        trip_type: tripType || '',
         time_slot_id: document.getElementById('time_slot_id')?.value || '',
     });
 
-    if (usesCustomPricing()) {
-        const pickup = activePickupInput()?.value.trim();
-        const drop = activeDropInput()?.value.trim();
-
-        if (isOthersTrip()) {
-            if (!pickup || !drop) return;
-            params.set('pickup_address', pickup);
-            params.set('drop_address', drop);
-        } else {
-            if (isOtherApartment()) {
-                if (!pickup) return;
-                params.set('pickup_address', pickup);
-            } else {
-                params.set('apartment_id', document.getElementById('apartment_id')?.value || '');
-            }
-
-            if (isOtherBusStand()) {
-                if (!drop) return;
-                params.set('drop_address', drop);
-            } else {
-                params.set('bus_stand_id', document.getElementById('bus_stand_id')?.value || '');
-            }
-        }
-    } else {
-        const apartmentId = document.getElementById('apartment_id')?.value;
-        const busStandId = document.getElementById('bus_stand_id')?.value;
-        if (!apartmentId || !busStandId) return;
-        params.set('apartment_id', apartmentId);
-        params.set('bus_stand_id', busStandId);
+    if (usesCustomAddresses()) {
+        if (isOtherPickup()) params.set('pickup_address', document.getElementById('pickup_address')?.value.trim() || '');
+        if (isOtherDrop()) params.set('drop_address', document.getElementById('drop_address')?.value.trim() || '');
     }
 
     preview?.classList.remove('d-none');
@@ -283,11 +173,8 @@ async function fetchPrice() {
         if (json.status) {
             const fare = json.data.estimated_fare;
             document.getElementById('fareAmount').textContent = '₹' + Number(fare).toFixed(0);
-            const fareType = json.data.booking_type === 'instant'
+            document.getElementById('fareType').textContent = json.data.booking_type === 'instant'
                 ? 'Instant booking (today)' : 'Scheduled booking';
-            document.getElementById('fareType').textContent = usesCustomPricing()
-                ? fareType + ' · custom route'
-                : fareType;
             document.getElementById('sumFare').textContent = '₹' + Number(fare).toFixed(0);
         }
     } catch (e) {
@@ -298,40 +185,138 @@ async function fetchPrice() {
     }
 }
 
+function getFormData() {
+    const form = document.getElementById('bookingForm');
+    return new FormData(form);
+}
+
+async function submitBooking() {
+    syncSlotTime();
+
+    const btn = document.getElementById('payAndBookBtn');
+    const errBox = document.getElementById('paymentError');
+    errBox?.classList.add('d-none');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing…';
+
+    try {
+        const res = await fetch(cfg.storeBookingUrl, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': cfg.csrfToken,
+            },
+            body: getFormData(),
+        });
+        const json = await res.json();
+
+        if (!json.status) {
+            throw new Error(json.message || 'Booking failed. Please try again.');
+        }
+
+        if (cfg.razorpayEnabled && json.data?.payment) {
+            openRazorpay(json.data.payment, json.data.booking_id);
+        } else {
+            window.location.href = json.data?.redirect || cfg.myBookingsUrl;
+        }
+    } catch (e) {
+        errBox.textContent = e.message;
+        errBox.classList.remove('d-none');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = cfg.razorpayEnabled
+            ? '<i class="bi bi-credit-card me-1"></i> Pay & Confirm Booking'
+            : '<i class="bi bi-check-lg me-1"></i> Confirm Booking';
+    }
+}
+
+function openRazorpay(payment, bookingId) {
+    const options = {
+        key: payment.key_id || cfg.razorpayKeyId,
+        amount: payment.amount,
+        currency: payment.currency,
+        name: 'Apartment Shuttle',
+        description: 'Ride booking payment',
+        order_id: payment.order_id,
+        prefill: {
+            name: payment.customer_name || '',
+            contact: payment.customer_mobile || '',
+        },
+        theme: { color: '#0f766e' },
+        handler: async function (response) {
+            try {
+                const verifyRes = await fetch(cfg.verifyPaymentUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': cfg.csrfToken,
+                    },
+                    body: JSON.stringify({
+                        booking_id: bookingId,
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_signature: response.razorpay_signature,
+                    }),
+                });
+                const verifyJson = await verifyRes.json();
+                if (verifyJson.status) {
+                    window.location.href = verifyJson.data?.redirect || cfg.myBookingsUrl;
+                } else {
+                    throw new Error(verifyJson.message || 'Payment verification failed.');
+                }
+            } catch (e) {
+                const errBox = document.getElementById('paymentError');
+                errBox.textContent = e.message;
+                errBox.classList.remove('d-none');
+            }
+        },
+        modal: {
+            ondismiss: function () {
+                document.getElementById('paymentError').textContent = 'Payment was cancelled. Your booking is saved as pending — you can try again from My Bookings.';
+                document.getElementById('paymentError').classList.remove('d-none');
+            },
+        },
+    };
+
+    const rzp = new Razorpay(options);
+    rzp.open();
+}
+
 function initBookingPage() {
     if (!document.getElementById('bookingForm')) return;
 
-    syncFieldState();
+    syncCustomFields();
 
-    document.getElementById('trip_type')?.addEventListener('change', () => {
-        syncFieldState();
+    document.getElementById('pickup_location')?.addEventListener('change', () => {
+        syncCustomFields();
         triggerPriceUpdate();
     });
-
-    document.getElementById('apartment_id')?.addEventListener('change', () => {
-        syncFieldState();
+    document.getElementById('drop_location')?.addEventListener('change', () => {
+        syncCustomFields();
         triggerPriceUpdate();
     });
-
-    document.getElementById('bus_stand_id')?.addEventListener('change', () => {
-        syncFieldState();
-        triggerPriceUpdate();
+    ['pickup_address', 'drop_address'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', triggerPriceUpdate);
     });
 
-    ['pickup_address_standard', 'drop_address_standard', 'pickup_address_custom', 'drop_address_custom']
-        .forEach(id => {
-            document.getElementById(id)?.addEventListener('input', triggerPriceUpdate);
-        });
+    document.getElementById('swapLocations')?.addEventListener('click', () => {
+        const pickup = document.getElementById('pickup_location');
+        const drop = document.getElementById('drop_location');
+        const tmp = pickup.value;
+        pickup.value = drop.value;
+        drop.value = tmp;
+        syncCustomFields();
+        triggerPriceUpdate();
+    });
 
     document.querySelectorAll('.btn-next').forEach(btn => {
         btn.addEventListener('click', () => {
-            const next = btn.dataset.next;
-            if (next === '2' && !validateStep1()) return;
-            if (next === '2') {
-                updateSummary();
-                fetchPrice();
-            }
-            showStep(next);
+            if (!validateStep1()) return;
+            updateSummary();
+            fetchPrice();
+            showStep(btn.dataset.next);
         });
     });
 
@@ -339,11 +324,12 @@ function initBookingPage() {
         btn.addEventListener('click', () => showStep(btn.dataset.prev));
     });
 
+    document.getElementById('payAndBookBtn')?.addEventListener('click', submitBooking);
+
     const slotSelect = document.getElementById('time_slot_id');
     const slotHidden = document.getElementById('slot_time');
     slotSelect?.addEventListener('change', () => {
-        const opt = slotSelect.options[slotSelect.selectedIndex];
-        if (slotHidden) slotHidden.value = opt?.dataset?.slotTime || '';
+        syncSlotTime();
         triggerPriceUpdate();
     });
 
@@ -353,7 +339,9 @@ function initBookingPage() {
     });
 
     if (document.getElementById('booking_date')?.value) {
-        loadSlots();
+        loadSlots().then(() => syncSlotTime());
+    } else {
+        syncSlotTime();
     }
 }
 

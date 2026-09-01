@@ -29,6 +29,8 @@
             <a href="{{ route('drivers.index') }}" class="nav-link {{ str_starts_with($r ?? '', 'drivers.') ? 'active' : '' }}"><i class="bi bi-person-badge me-2"></i>Drivers</a>
             <a href="{{ route('vehicles.index') }}" class="nav-link {{ str_starts_with($r ?? '', 'vehicles.') ? 'active' : '' }}"><i class="bi bi-truck me-2"></i>Vehicles</a>
             <a href="{{ route('time-slots.index') }}" class="nav-link {{ str_starts_with($r ?? '', 'time-slots.') ? 'active' : '' }}"><i class="bi bi-clock me-2"></i>Time Slots</a>
+            <a href="{{ route('subscription-enquiries.index') }}" class="nav-link {{ str_starts_with($r ?? '', 'subscription-enquiries.') ? 'active' : '' }}"><i class="bi bi-envelope-paper me-2"></i>Plan Enquiries</a>
+            <a href="{{ route('admin.settings.edit') }}" class="nav-link {{ str_starts_with($r ?? '', 'admin.settings.') ? 'active' : '' }}"><i class="bi bi-gear me-2"></i>Settings</a>
         </nav>
     </aside>
     <main class="flex-grow-1 p-4">

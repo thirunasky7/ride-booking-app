@@ -74,14 +74,48 @@ With one Android device connected, `flutter run` is enough.
 - Mobile: `9876543210`
 - Password: `driver123`
 
-### Customer payment
+### Customer payment (Razorpay)
 
-Customers can mark a booking as paid with method **UPI** or **Cash**:
+When Razorpay is enabled in **Admin → Settings**, the app uses online checkout:
+
+1. `POST /api/create-booking` — returns `payment` object with Razorpay order
+2. `POST /api/verify-payment` — verify signature after checkout
+3. `GET /api/payment-config` — check if Razorpay is enabled
+
+Fallback (Razorpay disabled): mark paid manually:
 
 ```
 POST /api/bookings/{id}/payment-status
-{ "payment_status": "paid", "payment_method": "upi" }
+{ "payment_status": "paid", "payment_method": "upi" }  // or "cash"
 ```
+
+### Monthly subscription enquiry
+
+```
+POST /api/subscription-enquiry
+{
+  "name": "John",
+  "mobile": "9876543210",
+  "subscription_id": 1,
+  "preferred_start_date": "2026-09-01",
+  "message": "Daily commute"
+}
+```
+
+### Booking payload (pickup/drop dropdowns)
+
+```
+POST /api/create-booking
+{
+  "pickup_location": "apartment:1",
+  "drop_location": "busstand:2",
+  "booking_date": "2026-09-01",
+  "time_slot_id": 3,
+  "slot_time": "08:00:00"
+}
+```
+
+Use `other` for custom addresses and include `pickup_address` / `drop_address`.
 
 ### Default OTP
 

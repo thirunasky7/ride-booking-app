@@ -37,6 +37,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::resource('route-prices', RoutePriceController::class);
     Route::resource('subscriptions', SubscriptionController::class);
     Route::get('subscribers', [SubscriptionController::class, 'subscribers'])->name('subscriptions.subscribers');
+    Route::get('settings', [\App\Http\Controllers\Admin\SettingsController::class, 'edit'])->name('admin.settings.edit');
+    Route::put('settings', [\App\Http\Controllers\Admin\SettingsController::class, 'update'])->name('admin.settings.update');
+    Route::get('subscription-enquiries', [\App\Http\Controllers\Admin\SubscriptionEnquiryController::class, 'index'])->name('subscription-enquiries.index');
+    Route::get('subscription-enquiries/{subscription_enquiry}', [\App\Http\Controllers\Admin\SubscriptionEnquiryController::class, 'show'])->name('subscription-enquiries.show');
+    Route::put('subscription-enquiries/{subscription_enquiry}', [\App\Http\Controllers\Admin\SubscriptionEnquiryController::class, 'update'])->name('subscription-enquiries.update');
 });
 
 Route::get('/dashboard', function () {
@@ -60,11 +65,12 @@ Route::prefix('customer')->group(function () {
         Route::get('/dashboard', [CustomerBookingController::class, 'dashboard'])->name('customer.dashboard');
         Route::get('/book-ride', [CustomerBookingController::class, 'create'])->name('customer.bookRide');
         Route::post('/store-booking', [CustomerBookingController::class, 'store'])->name('customer.storeBooking');
+        Route::post('/verify-payment', [CustomerBookingController::class, 'verifyPayment'])->name('customer.verifyPayment');
         Route::get('/pre-book', [CustomerBookingController::class, 'preBookForm'])->name('customer.preBook');
         Route::post('/store-pre-book', [CustomerBookingController::class, 'storePreBook'])->name('customer.storePreBook');
         Route::get('/scheduled-bookings', [CustomerBookingController::class, 'preBookings'])->name('customer.preBookings');
         Route::get('/subscriptions', [CustomerBookingController::class, 'subscriptions'])->name('customer.subscriptions');
-        Route::post('/subscriptions/purchase', [CustomerBookingController::class, 'purchaseSubscription'])->name('customer.purchaseSubscription');
+        Route::post('/subscriptions/enquiry', [CustomerBookingController::class, 'submitSubscriptionEnquiry'])->name('customer.subscriptionEnquiry');
         Route::get('/my-bookings', [CustomerBookingController::class, 'myBookings'])->name('customer.myBookings');
         Route::post('/cancel-booking/{id}', [CustomerBookingController::class, 'cancelBooking'])->name('customer.cancelBooking');
     });

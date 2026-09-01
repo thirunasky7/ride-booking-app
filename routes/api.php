@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\BookingApiController;
 use App\Http\Controllers\Api\DriverApiController;
 use App\Http\Controllers\Api\SlotApiController;
 use App\Http\Controllers\Api\PreBookingApiController;
+use App\Http\Controllers\Api\PaymentApiController;
 use App\Http\Controllers\Api\SubscriptionApiController;
 use App\Http\Controllers\Api\PricingApiController;
 use App\Http\Controllers\Api\CatalogApiController;
@@ -15,6 +16,7 @@ Route::post('/driver/login', [DriverApiController::class, 'login']);
 
 Route::get('/calculate-price', [PricingApiController::class, 'calculatePrice']);
 Route::get('/available-slots', [SlotApiController::class, 'availableSlots']);
+Route::get('/payment-config', [PaymentApiController::class, 'config']);
 Route::get('/apartments', [CatalogApiController::class, 'apartments']);
 Route::get('/bus-stands', [CatalogApiController::class, 'busStands']);
 
@@ -49,6 +51,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/account', [AuthController::class, 'deleteAccount']);
 
     Route::post('/create-booking', [BookingApiController::class, 'createBooking']);
+    Route::post('/verify-payment', [PaymentApiController::class, 'verify']);
+    Route::post('/bookings/{id}/create-payment-order', [PaymentApiController::class, 'createOrder']);
     Route::put('/modify-booking/{id}', [BookingApiController::class, 'modifyBooking']);
     Route::get('/booking-history', [BookingApiController::class, 'bookingHistory']);
     Route::get('/upcoming-bookings', [BookingApiController::class, 'upcomingBookings']);
@@ -63,5 +67,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/subscription-plans', [SubscriptionApiController::class, 'plans']);
     Route::get('/my-subscription', [SubscriptionApiController::class, 'mySubscription']);
+    Route::post('/subscription-enquiry', [SubscriptionApiController::class, 'submitEnquiry']);
     Route::post('/purchase-subscription', [SubscriptionApiController::class, 'purchase']);
 });

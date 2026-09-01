@@ -12,5 +12,21 @@ class Setting extends Model
         'booking_close_time',
         'commission_percent',
         'custom_route_price',
+        'razorpay_key_id',
+        'razorpay_key_secret',
+        'razorpay_enabled',
+        'site_name',
+        'support_phone',
+        'support_email',
+    ];
+
+    protected $casts = [
+        'razorpay_enabled' => 'boolean',
+        'commission_percent' => 'decimal:2',
+        'custom_route_price' => 'decimal:2',
+    ];
+
+    protected $hidden = [
+        'razorpay_key_secret',
     ];
 }

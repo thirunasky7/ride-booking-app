@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\SubscriptionEnquiryRequest;
 use App\Http\Requests\SubscriptionRequest;
 use App\Models\Subscription;
+use App\Models\SubscriptionEnquiry;
 use App\Services\SubscriptionService;
 use App\Traits\ApiResponse;
 use RuntimeException;
@@ -42,5 +44,21 @@ class SubscriptionApiController extends Controller
         } catch (RuntimeException $e) {
             return $this->error($e->getMessage(), 422);
         }
+    }
+
+    public function submitEnquiry(SubscriptionEnquiryRequest $request)
+    {
+        $enquiry = SubscriptionEnquiry::create([
+            'user_id' => auth()->id(),
+            'subscription_id' => $request->subscription_id,
+            'name' => $request->name,
+            'mobile' => $request->mobile,
+            'email' => $request->email,
+            'message' => $request->message,
+            'preferred_start_date' => $request->preferred_start_date,
+            'status' => 'pending',
+        ]);
+
+        return $this->success(['enquiry' => $enquiry], 'Enquiry submitted successfully.');
     }
 }

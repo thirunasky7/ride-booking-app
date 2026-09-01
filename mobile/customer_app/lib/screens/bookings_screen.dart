@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../services/api_client.dart';
 import '../services/customer_api.dart';
+import '../services/razorpay_checkout.dart';
 import '../theme/app_theme.dart';
 
 class BookingsScreen extends StatefulWidget {
@@ -16,9 +17,12 @@ class BookingsScreen extends StatefulWidget {
 
 class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProviderStateMixin {
   late final TabController _tabs = TabController(length: 2, vsync: this);
+  late final RazorpayCheckout _checkout = RazorpayCheckout(widget.api);
   List<BookingModel> upcoming = [];
   List<BookingModel> history = [];
   bool loading = true;
+  bool razorpayEnabled = false;
+  int? payingBookingId;
 
   @override
   void initState() {
@@ -29,16 +33,19 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
   @override
   void dispose() {
     _tabs.dispose();
+    _checkout.dispose();
     super.dispose();
   }
 
   Future<void> _load() async {
     setState(() => loading = true);
     try {
+      final config = await widget.api.paymentConfig();
       final u = await widget.api.upcomingBookings();
       final h = await widget.api.bookingHistory();
       if (!mounted) return;
       setState(() {
+        razorpayEnabled = config.razorpayEnabled;
         upcoming = u;
         history = h;
         loading = false;
@@ -75,6 +82,31 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
     } on ApiException catch (e) {
       if (!mounted) return;
       _toast(e.message);
+    }
+  }
+
+  Future<void> _payOnline(BookingModel booking) async {
+    setState(() => payingBookingId = booking.id);
+    try {
+      final order = await widget.api.createPaymentOrder(booking.id);
+      if (!mounted) return;
+      await _checkout.pay(
+        order: order,
+        onSuccess: () async {
+          await _load();
+          if (!mounted) return;
+          _toast('Payment successful');
+        },
+        onError: (msg) {
+          if (!mounted) return;
+          _toast(msg);
+        },
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      _toast(e.message);
+    } finally {
+      if (mounted) setState(() => payingBookingId = null);
     }
   }
 
@@ -218,12 +250,25 @@ class _BookingsScreenState extends State<BookingsScreen> with SingleTickerProvid
                     _Pill(
                       text: b.isPaid
                           ? 'PAID${b.paymentMethod != null ? ' · ${b.paymentMethod!.toUpperCase()}' : ''}'
-                          : 'UNPAID',
+                          : b.paymentStatus == 'pending'
+                              ? 'PAYMENT PENDING'
+                              : 'UNPAID',
                       bg: b.isPaid ? const Color(0xFFDCFCE7) : const Color(0xFFFFE4E6),
                       fg: b.isPaid ? AppTheme.success : AppTheme.danger,
                     ),
                     const Spacer(),
-                    if (canAct && !b.isPaid && b.status != 'cancelled')
+                    if (canAct && b.needsPayment && razorpayEnabled && b.status != 'cancelled')
+                      TextButton(
+                        onPressed: payingBookingId == b.id ? null : () => _payOnline(b),
+                        child: payingBookingId == b.id
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Text('Pay online', style: TextStyle(fontWeight: FontWeight.w800)),
+                      ),
+                    if (canAct && b.needsPayment && !razorpayEnabled && b.status != 'cancelled')
                       TextButton(
                         onPressed: () => _markPaid(b),
                         child: const Text('Mark paid', style: TextStyle(fontWeight: FontWeight.w800)),

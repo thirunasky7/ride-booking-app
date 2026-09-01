@@ -21,12 +21,19 @@ class BookingService
         protected PricingService $pricingService,
         protected SubscriptionService $subscriptionService,
         protected LocationService $locationService,
+        protected LocationResolver $locationResolver,
+        protected SettingsService $settingsService,
     ) {}
 
     public function create(User $user, array $data): Booking
     {
         return DB::transaction(function () use ($user, $data) {
-            $data = $this->resolveLocations($data);
+            if (!empty($data['pickup_location']) && !empty($data['drop_location'])) {
+                $data = $this->locationResolver->resolveBookingLocations($data);
+                $data = $this->resolveSlotTime($data);
+            } else {
+                $data = $this->resolveLocations($data);
+            }
             $bookingType = $this->resolveBookingType($data['booking_date']);
 
             $this->subscriptionService->assertCanBook($user);
@@ -49,6 +56,9 @@ class BookingService
                     $data['booking_date']
                 );
 
+            $requiresPayment = $this->settingsService->isRazorpayEnabled();
+            $initialStatus = $requiresPayment ? 'pending' : ($bookingType === self::TYPE_INSTANT ? 'confirmed' : 'pending');
+
             $booking = Booking::create([
                 'user_id' => $user->id,
                 'vehicle_id' => $vehicle->id,
@@ -65,17 +75,38 @@ class BookingService
                 'slot_time' => $data['slot_time'],
                 'trip_type' => $data['trip_type'],
                 'booking_type' => $bookingType,
-                'status' => $bookingType === self::TYPE_INSTANT ? 'confirmed' : 'pending',
-                'payment_status' => 'unpaid',
+                'status' => $initialStatus,
+                'payment_status' => $requiresPayment ? 'pending' : 'unpaid',
                 'price' => $pricing['price'],
                 'commission_amount' => $pricing['commission_amount'],
                 'driver_amount' => $pricing['driver_amount'],
             ]);
 
-            $this->subscriptionService->deductRide($user);
+            if (!$requiresPayment) {
+                $this->subscriptionService->deductRide($user);
+            }
 
-            return $booking->load(['vehicle', 'apartment', 'busStand']);
+            return $booking->load(['vehicle', 'apartment', 'busStand', 'customer']);
         });
+    }
+
+    public function finalizeAfterPayment(Booking $booking, User $user): Booking
+    {
+        if ($booking->user_id !== $user->id) {
+            throw new RuntimeException('Unauthorized booking access.');
+        }
+
+        if ($booking->payment_status !== 'paid') {
+            throw new RuntimeException('Payment is not completed for this booking.');
+        }
+
+        $this->subscriptionService->deductRide($user);
+
+        if ($booking->status === 'pending') {
+            $booking->update(['status' => 'confirmed']);
+        }
+
+        return $booking->fresh(['vehicle', 'apartment', 'busStand']);
     }
 
     public function resolveBookingType(string $bookingDate): string
@@ -186,13 +217,13 @@ class BookingService
             throw new RuntimeException('Cannot update payment for a cancelled booking.');
         }
 
-        if (!in_array($paymentStatus, ['unpaid', 'paid'], true)) {
+        if (!in_array($paymentStatus, ['unpaid', 'paid', 'pending'], true)) {
             throw new RuntimeException('Invalid payment status.');
         }
 
         if ($paymentStatus === 'paid') {
-            if (!in_array($paymentMethod, ['cash', 'upi'], true)) {
-                throw new RuntimeException('Select a payment method: cash or upi.');
+            if (!in_array($paymentMethod, ['cash', 'upi', 'razorpay'], true)) {
+                throw new RuntimeException('Select a valid payment method.');
             }
 
             $booking->update([
