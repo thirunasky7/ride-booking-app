@@ -7,7 +7,7 @@
 @include('admin.partials.page-header', [
     'title' => 'Bookings',
     'subtitle' => 'Manage ride bookings',
-    'action' => route('bookings.create'),
+    'action' => route('admin.bookings.create'),
     'actionLabel' => 'Add Booking',
 ])
 
@@ -33,8 +33,8 @@
         </td>
         <td>
             <div class="d-flex gap-1">
-                <x-button href="{{ route('bookings.edit', $booking) }}" variant="outline" size="sm" icon="pencil">Edit</x-button>
-                <form action="{{ route('bookings.destroy', $booking) }}" method="POST" onsubmit="return confirm('Delete?')">
+                <x-button href="{{ route('admin.bookings.edit', $booking) }}" variant="outline" size="sm" icon="pencil">Edit</x-button>
+                <form action="{{ route('admin.bookings.destroy', $booking) }}" method="POST" onsubmit="return confirm('Delete?')">
                     @csrf @method('DELETE')
                     <x-button type="submit" variant="danger" size="sm" icon="trash">Delete</x-button>
                 </form>

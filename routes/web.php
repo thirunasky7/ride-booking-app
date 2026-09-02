@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ApartmentController;
 use App\Http\Controllers\Admin\BusStandController;
@@ -11,6 +12,9 @@ use App\Http\Controllers\Admin\TimeSlotController;
 use App\Http\Controllers\Admin\BookingController;
 use App\Http\Controllers\Admin\RoutePriceController;
 use App\Http\Controllers\Admin\SubscriptionController;
+use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\SubscriptionEnquiryController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Website\CustomerAuthController;
 use App\Http\Controllers\Website\CustomerBookingController;
 use App\Http\Controllers\Website\MarketingController;
@@ -25,27 +29,49 @@ Route::get('/privacy-policy', [MarketingController::class, 'privacy'])->name('ma
 Route::get('/terms', [MarketingController::class, 'terms'])->name('marketing.terms');
 Route::get('/account-deletion', [MarketingController::class, 'accountDeletion'])->name('marketing.account-deletion');
 
-Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
-    Route::resource('apartments', ApartmentController::class);
-    Route::resource('bus-stands', BusStandController::class);
-    Route::resource('drivers', DriverController::class);
-    Route::resource('vehicles', VehicleController::class);
-    Route::resource('time-slots', TimeSlotController::class);
-    Route::resource('bookings', BookingController::class);
-    Route::get('booking-calendar', [BookingController::class, 'calendar'])->name('bookings.calendar');
-    Route::resource('route-prices', RoutePriceController::class);
-    Route::resource('subscriptions', SubscriptionController::class);
-    Route::get('subscribers', [SubscriptionController::class, 'subscribers'])->name('subscriptions.subscribers');
-    Route::get('settings', [\App\Http\Controllers\Admin\SettingsController::class, 'edit'])->name('admin.settings.edit');
-    Route::put('settings', [\App\Http\Controllers\Admin\SettingsController::class, 'update'])->name('admin.settings.update');
-    Route::get('subscription-enquiries', [\App\Http\Controllers\Admin\SubscriptionEnquiryController::class, 'index'])->name('subscription-enquiries.index');
-    Route::get('subscription-enquiries/{subscription_enquiry}', [\App\Http\Controllers\Admin\SubscriptionEnquiryController::class, 'show'])->name('subscription-enquiries.show');
-    Route::put('subscription-enquiries/{subscription_enquiry}', [\App\Http\Controllers\Admin\SubscriptionEnquiryController::class, 'update'])->name('subscription-enquiries.update');
+/*
+|--------------------------------------------------------------------------
+| Admin Panel — all routes under /admin prefix
+|--------------------------------------------------------------------------
+*/
+Route::prefix('admin')->group(function () {
+
+    Route::middleware('guest')->group(function () {
+        Route::get('login', [AdminAuthController::class, 'create'])->name('admin.login');
+        Route::post('login', [AdminAuthController::class, 'store'])->name('admin.login.store');
+    });
+
+    Route::middleware(['auth', 'admin'])->group(function () {
+        Route::get('/', fn () => redirect()->route('admin.dashboard'))->name('admin.home');
+        Route::post('logout', [AdminAuthController::class, 'destroy'])->name('admin.logout');
+
+        Route::get('dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
+        Route::get('reports', [ReportController::class, 'index'])->name('admin.reports.index');
+
+        Route::resource('apartments', ApartmentController::class)->names('admin.apartments');
+        Route::resource('bus-stands', BusStandController::class)->names('admin.bus-stands');
+        Route::resource('drivers', DriverController::class)->names('admin.drivers');
+        Route::resource('vehicles', VehicleController::class)->names('admin.vehicles');
+        Route::resource('time-slots', TimeSlotController::class)->names('admin.time-slots');
+        Route::resource('bookings', BookingController::class)->names('admin.bookings');
+        Route::get('booking-calendar', [BookingController::class, 'calendar'])->name('admin.bookings.calendar');
+        Route::resource('route-prices', RoutePriceController::class)->names('admin.route-prices');
+        Route::resource('subscriptions', SubscriptionController::class)->names('admin.subscriptions');
+        Route::get('subscribers', [SubscriptionController::class, 'subscribers'])->name('admin.subscriptions.subscribers');
+
+        Route::get('settings', [SettingsController::class, 'edit'])->name('admin.settings.edit');
+        Route::put('settings', [SettingsController::class, 'update'])->name('admin.settings.update');
+
+        Route::get('subscription-enquiries', [SubscriptionEnquiryController::class, 'index'])->name('admin.subscription-enquiries.index');
+        Route::get('subscription-enquiries/{subscription_enquiry}', [SubscriptionEnquiryController::class, 'show'])->name('admin.subscription-enquiries.show');
+        Route::put('subscription-enquiries/{subscription_enquiry}', [SubscriptionEnquiryController::class, 'update'])->name('admin.subscription-enquiries.update');
+    });
 });
 
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    return auth()->check() && auth()->user()->role === 'superadmin'
+        ? redirect()->route('admin.dashboard')
+        : view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {

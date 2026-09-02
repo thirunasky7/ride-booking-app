@@ -46,7 +46,7 @@ class TimeSlotController extends Controller
         ]);
 
         return redirect()
-            ->route('time-slots.index')
+            ->route('admin.time-slots.index')
             ->with('success', 'Time Slot Added Successfully');
     }
 
@@ -86,7 +86,7 @@ class TimeSlotController extends Controller
         ]);
 
         return redirect()
-            ->route('time-slots.index')
+            ->route('admin.time-slots.index')
             ->with('success', 'Time Slot Updated Successfully');
     }
 

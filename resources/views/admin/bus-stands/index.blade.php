@@ -7,7 +7,7 @@
 @include('admin.partials.page-header', [
     'title' => 'Bus Stands',
     'subtitle' => 'Manage drop-off locations',
-    'action' => route('bus-stands.create'),
+    'action' => route('admin.bus-stands.create'),
     'actionLabel' => 'Add Bus Stand',
 ])
 
@@ -24,8 +24,8 @@
         </td>
         <td>
             <div class="d-flex gap-1">
-                <x-button href="{{ route('bus-stands.edit', $busStand) }}" variant="outline" size="sm" icon="pencil">Edit</x-button>
-                <form action="{{ route('bus-stands.destroy', $busStand) }}" method="POST" onsubmit="return confirm('Delete?')">
+                <x-button href="{{ route('admin.bus-stands.edit', $busStand) }}" variant="outline" size="sm" icon="pencil">Edit</x-button>
+                <form action="{{ route('admin.bus-stands.destroy', $busStand) }}" method="POST" onsubmit="return confirm('Delete?')">
                     @csrf @method('DELETE')
                     <x-button type="submit" variant="danger" size="sm" icon="trash">Delete</x-button>
                 </form>

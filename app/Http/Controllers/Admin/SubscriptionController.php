@@ -35,7 +35,7 @@ class SubscriptionController extends Controller
 
         Subscription::create($data);
 
-        return redirect()->route('subscriptions.index')->with('success', 'Plan created successfully.');
+        return redirect()->route('admin.subscriptions.index')->with('success', 'Plan created successfully.');
     }
 
     public function edit(Subscription $subscription)
@@ -57,7 +57,7 @@ class SubscriptionController extends Controller
 
         $subscription->update($data);
 
-        return redirect()->route('subscriptions.index')->with('success', 'Plan updated successfully.');
+        return redirect()->route('admin.subscriptions.index')->with('success', 'Plan updated successfully.');
     }
 
     public function destroy(Subscription $subscription)

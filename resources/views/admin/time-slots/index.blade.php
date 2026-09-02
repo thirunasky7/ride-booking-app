@@ -7,7 +7,7 @@
 @include('admin.partials.page-header', [
     'title' => 'Time Slots',
     'subtitle' => 'Manage booking time slots',
-    'action' => route('time-slots.create'),
+    'action' => route('admin.time-slots.create'),
     'actionLabel' => 'Add Time Slot',
 ])
 
@@ -23,8 +23,8 @@
         </td>
         <td>
             <div class="d-flex gap-1">
-                <x-button href="{{ route('time-slots.edit', $slot) }}" variant="outline" size="sm" icon="pencil">Edit</x-button>
-                <form action="{{ route('time-slots.destroy', $slot) }}" method="POST" onsubmit="return confirm('Delete Time Slot?')">
+                <x-button href="{{ route('admin.time-slots.edit', $slot) }}" variant="outline" size="sm" icon="pencil">Edit</x-button>
+                <form action="{{ route('admin.time-slots.destroy', $slot) }}" method="POST" onsubmit="return confirm('Delete Time Slot?')">
                     @csrf @method('DELETE')
                     <x-button type="submit" variant="danger" size="sm" icon="trash">Delete</x-button>
                 </form>

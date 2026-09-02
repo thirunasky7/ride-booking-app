@@ -7,7 +7,7 @@
 @include('admin.partials.page-header', [
     'title' => 'Route Pricing',
     'subtitle' => 'Manage apartment to bus stand fares',
-    'action' => route('route-prices.create'),
+    'action' => route('admin.route-prices.create'),
     'actionLabel' => 'Add Price',
 ])
 
@@ -21,8 +21,8 @@
         <td>₹{{ $price->holiday_price }}</td>
         <td>
             <div class="d-flex gap-1">
-                <x-button href="{{ route('route-prices.edit', $price) }}" variant="outline" size="sm" icon="pencil">Edit</x-button>
-                <form action="{{ route('route-prices.destroy', $price) }}" method="POST" onsubmit="return confirm('Delete?')">
+                <x-button href="{{ route('admin.route-prices.edit', $price) }}" variant="outline" size="sm" icon="pencil">Edit</x-button>
+                <form action="{{ route('admin.route-prices.destroy', $price) }}" method="POST" onsubmit="return confirm('Delete?')">
                     @csrf @method('DELETE')
                     <x-button type="submit" variant="danger" size="sm" icon="trash">Delete</x-button>
                 </form>

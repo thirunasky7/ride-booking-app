@@ -5,7 +5,7 @@
 @section('content')
 
 <div class="mb-4">
-    <a href="{{ route('subscription-enquiries.index') }}" class="text-decoration-none small">
+    <a href="{{ route('admin.subscription-enquiries.index') }}" class="text-decoration-none small">
         <i class="bi bi-arrow-left me-1"></i> Back to enquiries
     </a>
     <h3 class="fw-bold mt-2 mb-1">Subscription Enquiry</h3>
@@ -50,7 +50,7 @@
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white fw-semibold">Update Status</div>
             <div class="card-body">
-                <form action="{{ route('subscription-enquiries.update', $enquiry) }}" method="POST">
+                <form action="{{ route('admin.subscription-enquiries.update', $enquiry) }}" method="POST">
                     @csrf
                     @method('PUT')
                     <div class="mb-3">

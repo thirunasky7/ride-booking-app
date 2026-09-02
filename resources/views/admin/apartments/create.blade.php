@@ -4,7 +4,7 @@
 
 <h3>Add Apartment</h3>
 
-<form action="{{ route('apartments.store') }}"
+<form action="{{ route('admin.apartments.store') }}"
       method="POST">
 
     @csrf

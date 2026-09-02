@@ -4,7 +4,7 @@
 
 <h3>Edit Booking</h3>
 
-<form action="{{ route('bookings.update',$booking->id) }}"
+<form action="{{ route('admin.bookings.update',$booking->id) }}"
       method="POST">
 
     @csrf

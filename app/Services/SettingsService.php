@@ -49,4 +49,20 @@ class SettingsService
     {
         return $this->get()->razorpay_key_id;
     }
+
+    public function logoUrl(): ?string
+    {
+        $settings = $this->get();
+
+        return $settings->logo_path
+            ? asset('storage/'.$settings->logo_path)
+            : null;
+    }
+
+    public function isRazorpayTestMode(): bool
+    {
+        $keyId = $this->get()->razorpay_key_id ?? '';
+
+        return str_starts_with($keyId, 'rzp_test_');
+    }
 }

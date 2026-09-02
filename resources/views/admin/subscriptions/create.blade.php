@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="page-header"><h2 class="mb-0 fw-bold">Create Subscription Plan</h2></div>
-<form action="{{ route('subscriptions.store') }}" method="POST">
+<form action="{{ route('admin.subscriptions.store') }}" method="POST">
     @csrf
     <div class="card-modern p-4">
         <div class="row g-3">

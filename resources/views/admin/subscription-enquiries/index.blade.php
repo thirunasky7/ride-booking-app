@@ -40,7 +40,7 @@
                         <span class="badge bg-{{ $colors[$enquiry->status] ?? 'secondary' }}">{{ ucfirst($enquiry->status) }}</span>
                     </td>
                     <td>
-                        <a href="{{ route('subscription-enquiries.show', $enquiry) }}" class="btn btn-sm btn-outline-primary">View</a>
+                        <a href="{{ route('admin.subscription-enquiries.show', $enquiry) }}" class="btn btn-sm btn-outline-primary">View</a>
                     </td>
                 </tr>
                 @empty

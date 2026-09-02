@@ -14,8 +14,10 @@ class Setting extends Model
         'custom_route_price',
         'razorpay_key_id',
         'razorpay_key_secret',
+        'razorpay_webhook_secret',
         'razorpay_enabled',
         'site_name',
+        'logo_path',
         'support_phone',
         'support_email',
     ];
@@ -28,5 +30,15 @@ class Setting extends Model
 
     protected $hidden = [
         'razorpay_key_secret',
+        'razorpay_webhook_secret',
     ];
+
+    public function getLogoUrlAttribute(): ?string
+    {
+        if (!$this->logo_path) {
+            return null;
+        }
+
+        return asset('storage/'.$this->logo_path);
+    }
 }

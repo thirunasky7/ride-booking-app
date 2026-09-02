@@ -4,7 +4,7 @@
 
 <h3>Add Bus Stand</h3>
 
-<form action="{{ route('bus-stands.store') }}"
+<form action="{{ route('admin.bus-stands.store') }}"
       method="POST">
 
     @csrf

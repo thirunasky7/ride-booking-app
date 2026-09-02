@@ -4,7 +4,7 @@
 
 <h3>Edit Bus Stand</h3>
 
-<form action="{{ route('bus-stands.update',$bus_stand->id) }}"
+<form action="{{ route('admin.bus-stands.update',$bus_stand->id) }}"
       method="POST">
 
     @csrf

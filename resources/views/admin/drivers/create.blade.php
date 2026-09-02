@@ -4,7 +4,7 @@
 
 <h3>Add Driver</h3>
 
-<form action="{{ route('drivers.store') }}"
+<form action="{{ route('admin.drivers.store') }}"
       method="POST">
 
     @csrf

@@ -29,7 +29,7 @@ class BusStandController extends Controller
         BusStand::create($request->all());
 
         return redirect()
-            ->route('bus-stands.index')
+            ->route('admin.bus-stands.index')
             ->with('success', 'Bus Stand Added');
     }
 
@@ -47,7 +47,7 @@ class BusStandController extends Controller
         $bus_stand->update($request->all());
 
         return redirect()
-            ->route('bus-stands.index')
+            ->route('admin.bus-stands.index')
             ->with('success', 'Bus Stand Updated');
     }
 

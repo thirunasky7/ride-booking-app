@@ -15,6 +15,8 @@ class SettingsUpdateRequest extends FormRequest
     {
         return [
             'site_name' => ['required', 'string', 'max:120'],
+            'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,svg', 'max:2048'],
+            'remove_logo' => ['nullable', 'boolean'],
             'support_phone' => ['nullable', 'string', 'max:20'],
             'support_email' => ['nullable', 'email', 'max:120'],
             'slot_gap_minutes' => ['required', 'integer', 'min:5', 'max:120'],
@@ -25,6 +27,7 @@ class SettingsUpdateRequest extends FormRequest
             'razorpay_enabled' => ['nullable', 'boolean'],
             'razorpay_key_id' => ['nullable', 'string', 'max:120'],
             'razorpay_key_secret' => ['nullable', 'string', 'max:255'],
+            'razorpay_webhook_secret' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

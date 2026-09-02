@@ -7,7 +7,7 @@
 @include('admin.partials.page-header', [
     'title' => 'Vehicles',
     'subtitle' => 'Manage fleet vehicles',
-    'action' => route('vehicles.create'),
+    'action' => route('admin.vehicles.create'),
     'actionLabel' => 'Add Vehicle',
 ])
 
@@ -26,8 +26,8 @@
         </td>
         <td>
             <div class="d-flex gap-1">
-                <x-button href="{{ route('vehicles.edit', $vehicle) }}" variant="outline" size="sm" icon="pencil">Edit</x-button>
-                <form action="{{ route('vehicles.destroy', $vehicle) }}" method="POST" onsubmit="return confirm('Delete Vehicle?')">
+                <x-button href="{{ route('admin.vehicles.edit', $vehicle) }}" variant="outline" size="sm" icon="pencil">Edit</x-button>
+                <form action="{{ route('admin.vehicles.destroy', $vehicle) }}" method="POST" onsubmit="return confirm('Delete Vehicle?')">
                     @csrf @method('DELETE')
                     <x-button type="submit" variant="danger" size="sm" icon="trash">Delete</x-button>
                 </form>

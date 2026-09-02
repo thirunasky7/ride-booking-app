@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title', 'Ride Booking') — Apartment Shuttle</title>
+    <title>@yield('title', 'Ride Booking') — {{ $appSettings->site_name ?? 'Apartment Shuttle' }}</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -147,8 +147,12 @@
 <nav class="navbar navbar-expand-lg site-nav py-3">
     <div class="container">
         <a class="navbar-brand d-flex align-items-center gap-2" href="{{ route('home') }}">
-            <span class="brand-icon"><i class="bi bi-bus-front"></i></span>
-            Apartment Shuttle
+            @if(!empty($appSettings->logo_url))
+                <img src="{{ $appSettings->logo_url }}" alt="{{ $appSettings->site_name }}" style="max-height: 36px; max-width: 140px;">
+            @else
+                <span class="brand-icon"><i class="bi bi-bus-front"></i></span>
+            @endif
+            {{ $appSettings->site_name ?? 'Apartment Shuttle' }}
         </a>
 
         <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">

@@ -4,7 +4,7 @@
 
 <h3>Edit Driver</h3>
 
-<form action="{{ route('drivers.update',$driver->id) }}"
+<form action="{{ route('admin.drivers.update',$driver->id) }}"
       method="POST">
 
     @csrf

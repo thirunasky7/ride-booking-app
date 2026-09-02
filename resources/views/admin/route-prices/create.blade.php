@@ -4,7 +4,7 @@
 
 <h3>Add Route Price</h3>
 
-<form action="{{ route('route-prices.store') }}"
+<form action="{{ route('admin.route-prices.store') }}"
       method="POST">
 
     @csrf

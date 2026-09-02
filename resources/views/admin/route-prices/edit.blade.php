@@ -7,7 +7,7 @@
     <h2 class="mb-0 fw-bold">Edit Route Price</h2>
 </div>
 
-<form action="{{ route('route-prices.update', $route_price) }}" method="POST">
+<form action="{{ route('admin.route-prices.update', $route_price) }}" method="POST">
     @csrf @method('PUT')
     <div class="card-modern p-4">
         <div class="row g-3">
@@ -57,6 +57,6 @@
         </div>
     </div>
     <button class="btn btn-brand mt-3">Update Price</button>
-    <a href="{{ route('route-prices.index') }}" class="btn btn-outline-secondary mt-3">Cancel</a>
+    <a href="{{ route('admin.route-prices.index') }}" class="btn btn-outline-secondary mt-3">Cancel</a>
 </form>
 @endsection

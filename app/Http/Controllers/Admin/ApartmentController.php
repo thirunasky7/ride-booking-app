@@ -29,7 +29,7 @@ class ApartmentController extends Controller
         Apartment::create($request->all());
 
         return redirect()
-            ->route('apartments.index')
+            ->route('admin.apartments.index')
             ->with('success', 'Apartment Added');
     }
 
@@ -47,7 +47,7 @@ class ApartmentController extends Controller
         $apartment->update($request->all());
 
         return redirect()
-            ->route('apartments.index')
+            ->route('admin.apartments.index')
             ->with('success', 'Apartment Updated');
     }
 

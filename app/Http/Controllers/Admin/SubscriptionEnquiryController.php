@@ -36,7 +36,7 @@ class SubscriptionEnquiryController extends Controller
         $subscription_enquiry->update($request->only(['status', 'admin_notes']));
 
         return redirect()
-            ->route('subscription-enquiries.show', $subscription_enquiry)
+            ->route('admin.subscription-enquiries.show', $subscription_enquiry)
             ->with('success', 'Enquiry updated successfully.');
     }
 }

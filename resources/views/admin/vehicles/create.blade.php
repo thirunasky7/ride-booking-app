@@ -4,7 +4,7 @@
 
 <h3>Add Vehicle</h3>
 
-<form action="{{ route('vehicles.store') }}"
+<form action="{{ route('admin.vehicles.store') }}"
       method="POST">
 
     @csrf

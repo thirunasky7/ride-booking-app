@@ -4,7 +4,7 @@
 
 <h3>Edit Time Slot</h3>
 
-<form action="{{ route('time-slots.update',$time_slot->id) }}"
+<form action="{{ route('admin.time-slots.update',$time_slot->id) }}"
       method="POST">
 
     @csrf

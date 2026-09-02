@@ -37,7 +37,7 @@ class DriverController extends Controller
         ]);
 
         return redirect()
-            ->route('drivers.index')
+            ->route('admin.drivers.index')
             ->with('success', 'Driver Added');
     }
 
@@ -67,7 +67,7 @@ class DriverController extends Controller
         $driver->update($data);
 
         return redirect()
-            ->route('drivers.index')
+            ->route('admin.drivers.index')
             ->with('success', 'Driver Updated');
     }
 

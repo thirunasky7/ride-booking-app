@@ -4,7 +4,7 @@
 
 <h3>Add Time Slot</h3>
 
-<form action="{{ route('time-slots.store') }}"
+<form action="{{ route('admin.time-slots.store') }}"
       method="POST">
 
     @csrf

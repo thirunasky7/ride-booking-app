@@ -59,7 +59,7 @@ class RoutePriceController extends Controller
         );
 
         return redirect()
-            ->route('route-prices.index')
+            ->route('admin.route-prices.index')
             ->with(
                 'success',
                 'Price Added Successfully'
@@ -95,7 +95,7 @@ class RoutePriceController extends Controller
         );
 
         return redirect()
-            ->route('route-prices.index')
+            ->route('admin.route-prices.index')
             ->with(
                 'success',
                 'Price Updated Successfully'

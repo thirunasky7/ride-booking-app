@@ -61,7 +61,7 @@ class BookingController extends Controller
             $user = User::findOrFail($data['user_id']);
             $this->bookingService->create($user, $data);
 
-            return redirect()->route('bookings.index')->with('success', 'Booking created successfully.');
+            return redirect()->route('admin.bookings.index')->with('success', 'Booking created successfully.');
         } catch (RuntimeException $e) {
             return back()->withErrors(['slot_time' => $e->getMessage()])->withInput();
         }
@@ -83,7 +83,7 @@ class BookingController extends Controller
 
         $booking->update(['status' => $request->status]);
 
-        return redirect()->route('bookings.index')->with('success', 'Booking updated successfully.');
+        return redirect()->route('admin.bookings.index')->with('success', 'Booking updated successfully.');
     }
 
     public function destroy(Booking $booking)

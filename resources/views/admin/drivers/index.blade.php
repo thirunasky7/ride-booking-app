@@ -7,7 +7,7 @@
 @include('admin.partials.page-header', [
     'title' => 'Drivers',
     'subtitle' => 'Manage driver profiles',
-    'action' => route('drivers.create'),
+    'action' => route('admin.drivers.create'),
     'actionLabel' => 'Add Driver',
 ])
 
@@ -25,8 +25,8 @@
         </td>
         <td>
             <div class="d-flex gap-1">
-                <x-button href="{{ route('drivers.edit', $driver) }}" variant="outline" size="sm" icon="pencil">Edit</x-button>
-                <form action="{{ route('drivers.destroy', $driver) }}" method="POST" onsubmit="return confirm('Delete?')">
+                <x-button href="{{ route('admin.drivers.edit', $driver) }}" variant="outline" size="sm" icon="pencil">Edit</x-button>
+                <form action="{{ route('admin.drivers.destroy', $driver) }}" method="POST" onsubmit="return confirm('Delete?')">
                     @csrf @method('DELETE')
                     <x-button type="submit" variant="danger" size="sm" icon="trash">Delete</x-button>
                 </form>

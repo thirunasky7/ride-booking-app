@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="page-header"><h2 class="mb-0 fw-bold">Edit Plan: {{ $subscription->name }}</h2></div>
-<form action="{{ route('subscriptions.update', $subscription) }}" method="POST">
+<form action="{{ route('admin.subscriptions.update', $subscription) }}" method="POST">
     @csrf @method('PUT')
     <div class="card-modern p-4">
         <div class="row g-3">

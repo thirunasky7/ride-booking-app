@@ -4,7 +4,7 @@
 
 <h3>Edit Apartment</h3>
 
-<form action="{{ route('apartments.update',$apartment->id) }}"
+<form action="{{ route('admin.apartments.update',$apartment->id) }}"
       method="POST">
 
     @csrf

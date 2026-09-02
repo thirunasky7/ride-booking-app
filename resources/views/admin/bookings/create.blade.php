@@ -4,7 +4,7 @@
 
 <h3>Create Booking</h3>
 
-<form action="{{ route('bookings.store') }}"
+<form action="{{ route('admin.bookings.store') }}"
       method="POST">
 
     @csrf
